@@ -1,0 +1,173 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2023-12-15 12:02:35.671013",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "detailsotp_tab",
+  "zatca_invoice_enabled",
+  "send_invoice_to_zatca",
+  "create_csr",
+  "attach_xml_with_invoice",
+  "attach_xml_with_qr_code",
+  "attach_qr_code_doctype",
+  "attach_e_invoice_send_status_with_invoice",
+  "otp",
+  "pih",
+  "tab_2_tab",
+  "urls__api_endpoints_section",
+  "select",
+  "sandbox_url",
+  "simulation_url",
+  "production_url",
+  "csid_and_tokens_tab",
+  "csid_attach",
+  "production_csid",
+  "basic_auth",
+  "compliance_request_id",
+  "basic_auth_production"
+ ],
+ "fields": [
+  {
+   "fieldname": "detailsotp_tab",
+   "fieldtype": "Tab Break",
+   "label": "Details and OTP"
+  },
+  {
+   "default": "0",
+   "fieldname": "zatca_invoice_enabled",
+   "fieldtype": "Check",
+   "label": "zatca_invoice_enabled"
+  },
+  {
+   "fieldname": "send_invoice_to_zatca",
+   "fieldtype": "Select",
+   "label": "send invoice to zatca",
+   "options": "Live\nBatches"
+  },
+  {
+   "fieldname": "create_csr",
+   "fieldtype": "Button",
+   "label": "create CSR"
+  },
+  {
+   "default": "0",
+   "fieldname": "attach_xml_with_invoice",
+   "fieldtype": "Check",
+   "label": "attach xml with invoice"
+  },
+  {
+   "default": "0",
+   "fieldname": "attach_xml_with_qr_code",
+   "fieldtype": "Check",
+   "label": "attach xml with QR code"
+  },
+  {
+   "default": "0",
+   "fieldname": "attach_qr_code_doctype",
+   "fieldtype": "Check",
+   "label": "attach QR code doctype"
+  },
+  {
+   "default": "0",
+   "fieldname": "attach_e_invoice_send_status_with_invoice",
+   "fieldtype": "Check",
+   "label": "attach e_invoice send status with invoice"
+  },
+  {
+   "fieldname": "otp",
+   "fieldtype": "Data",
+   "label": "OTP"
+  },
+  {
+   "fieldname": "pih",
+   "fieldtype": "Data",
+   "label": "PIH"
+  },
+  {
+   "fieldname": "tab_2_tab",
+   "fieldtype": "Tab Break",
+   "label": "URLs / API EndPoints"
+  },
+  {
+   "fieldname": "urls__api_endpoints_section",
+   "fieldtype": "Section Break",
+   "label": "URLs / API EndPoints"
+  },
+  {
+   "fieldname": "select",
+   "fieldtype": "Select",
+   "label": "Select",
+   "options": "Simulation\nSandbox\nProduction"
+  },
+  {
+   "fieldname": "sandbox_url",
+   "fieldtype": "Data",
+   "label": "Sandbox url"
+  },
+  {
+   "fieldname": "simulation_url",
+   "fieldtype": "Data",
+   "label": "Simulation url"
+  },
+  {
+   "fieldname": "production_url",
+   "fieldtype": "Data",
+   "label": "Production url"
+  },
+  {
+   "fieldname": "csid_and_tokens_tab",
+   "fieldtype": "Tab Break",
+   "label": "CSID and Tokens"
+  },
+  {
+   "fieldname": "csid_attach",
+   "fieldtype": "Button",
+   "label": "CSID_attach"
+  },
+  {
+   "fieldname": "production_csid",
+   "fieldtype": "Button",
+   "label": "Production_CSID"
+  },
+  {
+   "fieldname": "basic_auth",
+   "fieldtype": "Data",
+   "label": "Basic Auth from CSID"
+  },
+  {
+   "fieldname": "compliance_request_id",
+   "fieldtype": "Data",
+   "label": "compliance request id "
+  },
+  {
+   "fieldname": "basic_auth_production",
+   "fieldtype": "Data",
+   "label": "Basic Auth from production"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2023-12-20 17:06:57.824950",
+ "modified_by": "Administrator",
+ "module": "Zatca2023",
+ "name": "Zatca setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
