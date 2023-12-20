@@ -4,6 +4,10 @@ app_publisher = "ERPGulf"
 app_description = "Saudi Zatca phase-2 implementation according to zatca 2023 documents"
 app_email = "support@ERPGulf.com"
 app_license = "mit"
+
+from frappe import _
+from . import __version__ as app_version
+
 # required_apps = []
 
 # Includes in <head>
@@ -130,6 +134,14 @@ app_license = "mit"
 #	}
 # }
 
+doc_events = {
+    
+    "Sales Invoice": { "on_submit": [
+            "zatca2023.zatca2023.myzatca_test.before_save"
+         ]
+    }}
+
+
 # Scheduled Tasks
 # ---------------
 
@@ -227,3 +239,9 @@ app_license = "mit"
 #	"Logging DocType Name": 30  # days to retain logs
 # }
 
+doctype_js = {
+    "Sales Invoice" : "public/js/our_sales_invoice.js" ,
+    }
+
+
+fixtures = [ {"dt": "Custom Field","filters": [["module", "=", "zatca2023"]] }]
