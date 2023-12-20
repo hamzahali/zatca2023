@@ -15,7 +15,6 @@
   "attach_e_invoice_send_status_with_invoice",
   "otp",
   "pih",
-  "tab_2_tab",
   "urls__api_endpoints_section",
   "select",
   "sandbox_url",
@@ -31,7 +30,7 @@
  "fields": [
   {
    "fieldname": "detailsotp_tab",
-   "fieldtype": "Tab Break",
+   "fieldtype": "Section Break",
    "label": "Details and OTP"
   },
   {
@@ -86,11 +85,6 @@
    "label": "PIH"
   },
   {
-   "fieldname": "tab_2_tab",
-   "fieldtype": "Tab Break",
-   "label": "URLs / API EndPoints"
-  },
-  {
    "fieldname": "urls__api_endpoints_section",
    "fieldtype": "Section Break",
    "label": "URLs / API EndPoints"
@@ -118,7 +112,7 @@
   },
   {
    "fieldname": "csid_and_tokens_tab",
-   "fieldtype": "Tab Break",
+   "fieldtype": "Section Break",
    "label": "CSID and Tokens"
   },
   {
@@ -150,7 +144,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-12-20 17:06:57.824950",
+ "modified": "2023-12-20 18:03:19.375030",
  "modified_by": "Administrator",
  "module": "Zatca2023",
  "name": "Zatca setting",
