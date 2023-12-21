@@ -64,7 +64,8 @@ def get_Tax_for_Item(full_string,item):
 
 def get_ICV_code(invoice_number):
                     icv_code = + int(''.join(filter(str.isdigit, invoice_number))) 
-                    return icv_code
+                    return "46531"
+                    # return icv_code
 
 def  get_Issue_Time(invoice_number): 
                 doc = frappe.get_doc("Sales Invoice", invoice_number)
@@ -214,7 +215,7 @@ def doc_Reference(invoice,sales_invoice_doc,invoice_number):
                 cac_AdditionalDocumentReference = ET.SubElement(invoice, "cac:AdditionalDocumentReference")
                 cbc_ID_1 = ET.SubElement(cac_AdditionalDocumentReference, "cbc:ID")
                 # cbc_ID_1.text = sales_invoice_doc.custom_document_id
-                cbc_ID_1.text = "46531"
+                cbc_ID_1.text = "ICV"
                 cbc_UUID_1 = ET.SubElement(cac_AdditionalDocumentReference, "cbc:UUID")
                 cbc_UUID_1.text = str(get_ICV_code(invoice_number))
                 return invoice  
@@ -230,7 +231,8 @@ def additional_Reference(invoice):
                 cac_Attachment = ET.SubElement(cac_AdditionalDocumentReference2, "cac:Attachment")
                 cbc_EmbeddedDocumentBinaryObject = ET.SubElement(cac_Attachment, "cbc:EmbeddedDocumentBinaryObject")
                 cbc_EmbeddedDocumentBinaryObject.set("mimeCode", "text/plain")
-                cbc_EmbeddedDocumentBinaryObject.text = settings.pih
+                # cbc_EmbeddedDocumentBinaryObject.text = settings.pih
+                cbc_EmbeddedDocumentBinaryObject.text = "NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ=="
             # QR CODE ------------------------------------------------------------------------------------------------------------------------------------------------------------------
                 cac_AdditionalDocumentReference22 = ET.SubElement(invoice, "cac:AdditionalDocumentReference")
                 cbc_ID_1_12 = ET.SubElement(cac_AdditionalDocumentReference22, "cbc:ID")
@@ -256,9 +258,9 @@ def company_Data(invoice,sales_invoice_doc):
                 cac_Party_1 = ET.SubElement(cac_AccountingSupplierParty, "cac:Party")
                 cac_PartyIdentification = ET.SubElement(cac_Party_1, "cac:PartyIdentification")
                 cbc_ID_2 = ET.SubElement(cac_PartyIdentification, "cbc:ID")
-                cbc_ID_2.set("schemeID", "MLS")
+                cbc_ID_2.set("schemeID", "CRN")
                 # cbc_ID_2.text =company_doc.custom_accounting_supplier_party_id
-                cbc_ID_2.text ="12364569"
+                cbc_ID_2.text ="1234567890"
                 cac_PostalAddress = ET.SubElement(cac_Party_1, "cac:PostalAddress")
                 cbc_StreetName = ET.SubElement(cac_PostalAddress, "cbc:StreetName")
                 # cbc_StreetName.text = company_doc.custom_street
@@ -284,16 +286,18 @@ def company_Data(invoice,sales_invoice_doc):
                 cac_Country = ET.SubElement(cac_PostalAddress, "cac:Country")
                 cbc_IdentificationCode = ET.SubElement(cac_Country, "cbc:IdentificationCode")
                 # cbc_IdentificationCode.text = company_doc.custom_country_name
-                cbc_IdentificationCode.text = "saudi"
+                cbc_IdentificationCode.text = "SA"
                 cac_PartyTaxScheme = ET.SubElement(cac_Party_1, "cac:PartyTaxScheme")
                 cbc_CompanyID = ET.SubElement(cac_PartyTaxScheme, "cbc:CompanyID")
-                cbc_CompanyID.text = company_doc.tax_id
+                cbc_CompanyID.text = "300970806100003"    # Here seller tax id is given
+                # cbc_CompanyID.text = company_doc.tax_id
                 cac_TaxScheme = ET.SubElement(cac_PartyTaxScheme, "cac:TaxScheme")
                 cbc_ID_3 = ET.SubElement(cac_TaxScheme, "cbc:ID")
                 cbc_ID_3.text = "VAT"
                 cac_PartyLegalEntity = ET.SubElement(cac_Party_1, "cac:PartyLegalEntity")
                 cbc_RegistrationName = ET.SubElement(cac_PartyLegalEntity, "cbc:RegistrationName")
-                cbc_RegistrationName.text = sales_invoice_doc.company
+                # cbc_RegistrationName.text = sales_invoice_doc.company
+                cbc_RegistrationName.text = "ABCD Limited"
                 return invoice
             except Exception as e:
                     frappe.throw(str(e) )
@@ -327,14 +331,14 @@ def customer_Data(invoice,sales_invoice_doc):
                 cbc_CityName_1.text = "my city"
                 cbc_PostalZone_1 = ET.SubElement(cac_PostalAddress_1, "cbc:PostalZone")
                 # cbc_PostalZone_1.text = str(customer_doc.custom_pincode)
-                cbc_PostalZone_1.text = "1235"
+                cbc_PostalZone_1.text = "12345"
                 cbc_CountrySubentity_1 = ET.SubElement(cac_PostalAddress_1, "cbc:CountrySubentity")
                 # cbc_CountrySubentity_1.text = customer_doc.custom_sub
                 cbc_CountrySubentity_1.text = "my sub"
                 cac_Country_1 = ET.SubElement(cac_PostalAddress_1, "cac:Country")
                 cbc_IdentificationCode_1 = ET.SubElement(cac_Country_1, "cbc:IdentificationCode")
                 # cbc_IdentificationCode_1.text = customer_doc.custom_country
-                cbc_IdentificationCode_1.text = "my country"
+                cbc_IdentificationCode_1.text = "SA"
                 cac_PartyTaxScheme_1 = ET.SubElement(cac_Party_2, "cac:PartyTaxScheme")
                 cac_TaxScheme_1 = ET.SubElement(cac_PartyTaxScheme_1, "cac:TaxScheme")
                 cbc_ID_5 = ET.SubElement(cac_TaxScheme_1, "cbc:ID")
@@ -375,9 +379,10 @@ def tax_Data(invoice,sales_invoice_doc):
                 cbc_TaxAmount_2.text =  str(sales_invoice_doc.base_total_taxes_and_charges)
                 cac_TaxCategory_1 = ET.SubElement(cac_TaxSubtotal, "cac:TaxCategory")
                 cbc_ID_8 = ET.SubElement(cac_TaxCategory_1, "cbc:ID")
-                cbc_ID_8.text =  "R"
+                cbc_ID_8.text =  "S"
                 cbc_Percent_1 = ET.SubElement(cac_TaxCategory_1, "cbc:Percent")
-                cbc_Percent_1.text = str(sales_invoice_doc.taxes[0].rate)
+                # cbc_Percent_1.text = str(sales_invoice_doc.taxes[0].rate)
+                cbc_Percent_1.text = f"{float(sales_invoice_doc.taxes[0].rate):.2f}"                
                 cac_TaxScheme_3 = ET.SubElement(cac_TaxCategory_1, "cac:TaxScheme")
                 cbc_ID_9 = ET.SubElement(cac_TaxScheme_3, "cbc:ID")
                 cbc_ID_9.text = "VAT"
@@ -434,7 +439,9 @@ def item_data(invoice,sales_invoice_doc):
                     # cbc_ID_11.text = sales_invoice_doc.custom_item_character
                     cbc_ID_11.text = "S"
                     cbc_Percent_2 = ET.SubElement(cac_ClassifiedTaxCategory, "cbc:Percent")
-                    cbc_Percent_2.text =str(item_tax_percentage)
+                    # cbc_Percent_2.text =str(item_tax_percentage)
+                    cbc_Percent_2.text = f"{float(item_tax_percentage):.2f}"
+                    # frappe.throw(cbc_Percent_2.text)
                     cac_TaxScheme_4 = ET.SubElement(cac_ClassifiedTaxCategory, "cac:TaxScheme")
                     cbc_ID_12 = ET.SubElement(cac_TaxScheme_4, "cbc:ID")
                     cbc_ID_12.text = "VAT"
@@ -518,7 +525,21 @@ def generate_csr():
                     frappe.msgprint("An error occurred: " + str(e))
             except Exception as e:
                     frappe.throw(str(e) )
-                    
+
+
+def get_API_url(base_url):
+                try:
+                    settings = frappe.get_doc('Zatca setting')
+                    if settings.select == "Sandbox":
+                        url = settings.sandbox_url + base_url
+                    elif settings.select == "Simulation":
+                        url = settings.simulation_url + base_url
+                    else:
+                        url = settings.production_url + base_url
+                    return url 
+                except Exception as e:
+                    frappe.throw(str(e) ) 
+
 @frappe.whitelist(allow_guest=True)
 def create_CSID(): 
                 try:
@@ -536,9 +557,15 @@ def create_CSID():
                     'Cookie': 'TS0106293e=0132a679c07382ce7821148af16b99da546c13ce1dcddbef0e19802eb470e539a4d39d5ef63d5c8280b48c529f321e8b0173890e4f'
                     }
                     response = requests.request("POST", url=get_API_url(base_url="compliance"), headers=headers, data=payload)
-                    print(response.text)
                     frappe.msgprint(response.text)
                     frappe.msgprint("the CSID formed through url")
+                    data=json.loads(response.text)
+                    concatenated_value = data["binarySecurityToken"] + ":" + data["secret"]
+                    encoded_value = base64.b64encode(concatenated_value.encode()).decode()
+                    settings.set("basic_auth", encoded_value)
+                    settings.save()
+                    settings.set("compliance_request_id",data["requestID"])
+                    settings.save()
                 except Exception as e:
                             frappe.throw("error" + str(e))
 
@@ -633,18 +660,6 @@ def xml_base64_Decode(signed_xmlfile_name):
                     except Exception as e:
                         frappe.throw(str(e) )
 
-def get_API_url(base_url):
-                try:
-                    settings = frappe.get_doc('Zatca setting')
-                    if settings.select == "Sandbox":
-                        url = settings.sandbox_url + base_url
-                    elif settings.select == "Simulation":
-                        url = settings.simulation_url + base_url
-                    else:
-                        url = settings.production_url + base_url
-                    return url 
-                except Exception as e:
-                    frappe.throw(str(e) ) 
 
 def send_invoice_for_clearance_normal(uuid1, signed_xmlfile_name, hash_value):
                     settings = frappe.get_doc('Zatca setting')
@@ -679,7 +694,11 @@ def production_CSID():
                     'Content-Type': 'application/json' }
                     response = requests.request("POST", url=get_API_url(base_url="production/csids"), headers=headers, data=payload)
                     frappe.msgprint(response.text)
-                    print(response.text)
+                    data=json.loads(response.text)
+                    concatenated_value = data["binarySecurityToken"] + ":" + data["secret"]
+                    encoded_value = base64.b64encode(concatenated_value.encode()).decode()
+                    settings.set("basic_auth_production", encoded_value)
+                    settings.save()
 
 def get_Reporting_Status(result):
                         try:
@@ -703,7 +722,7 @@ def reporting_API(uuid1,hash_value,signed_xmlfile_name):
                     'accept-language': 'en',
                     'Clearance-Status': '1',
                     'Accept-Version': 'V2',
-                    'Authorization': 'Basic' + settings.basic_auth_production,
+                    'Authorization': 'Basic' + settings.basic_auth,
                     'Content-Type': 'application/json',
                     'Cookie': 'TS0106293e=0132a679c0639d13d069bcba831384623a2ca6da47fac8d91bef610c47c7119dcdd3b817f963ec301682dae864351c67ee3a402866'
                     }
@@ -740,6 +759,7 @@ def zatca_Call(invoice_number):
                     try:
                             invoice= xml_tags()
                             invoice,uuid1,sales_invoice_doc=salesinvoice_data(invoice,invoice_number)
+                            # invoice=invoice_Typecode_Standard(invoice,sales_invoice_doc)
                             invoice=invoice_Typecode_Simplified(invoice,sales_invoice_doc)
                             invoice=doc_Reference(invoice,sales_invoice_doc,invoice_number)
                             invoice=additional_Reference(invoice)
@@ -755,7 +775,7 @@ def zatca_Call(invoice_number):
                             validate_invoice(signed_xmlfile_name,path_string)
                             result,clearance_status=send_invoice_for_clearance_normal(uuid1,signed_xmlfile_name,hash_value)
                             reporting_API(uuid1,hash_value,signed_xmlfile_name)
-                            clearance_API(uuid1,hash_value,signed_xmlfile_name)
+                            # clearance_API(uuid1,hash_value,signed_xmlfile_name)
                             current_time =now()
                             if clearance_status == "CLEARED":
                                 frappe.get_doc({"doctype":"Zatca Success log","title":"Zatca invoice call done successfully","message":"This message by Zatca Compliance ","invoice_number": invoice_number,"time":current_time,"zatca_response":result}).insert()    
