@@ -264,7 +264,8 @@ def company_Data(invoice,sales_invoice_doc):
                 # cbc_StreetName.text = company_doc.custom_street
                 cbc_StreetName.text = "comp street"
                 cbc_BuildingNumber = ET.SubElement(cac_PostalAddress, "cbc:BuildingNumber")
-                cbc_BuildingNumber.text = str(company_doc.custom_build_no)
+                # cbc_BuildingNumber.text = str(company_doc.custom_build_no)
+                cbc_BuildingNumber.text = "1235"
                 cbc_PlotIdentification = ET.SubElement(cac_PostalAddress, "cbc:PlotIdentification")
                 cbc_PlotIdentification.text =  company_doc.custom_plot_id_no
                 cbc_CitySubdivisionName = ET.SubElement(cac_PostalAddress, "cbc:CitySubdivisionName")
