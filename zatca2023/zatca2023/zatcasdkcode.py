@@ -187,7 +187,7 @@ def invoice_Typecode_Simplified(invoice,sales_invoice_doc):
             try:
                 cbc_InvoiceTypeCode = ET.SubElement(invoice, "cbc:InvoiceTypeCode")
                 cbc_InvoiceTypeCode.set("name", "0200000")
-                cbc_InvoiceTypeCode.text = "381"
+                cbc_InvoiceTypeCode.text = "388"
                 return invoice
             except Exception as e:
                     frappe.throw(str(e) )
@@ -196,7 +196,8 @@ def invoice_Typecode_Standard(invoice,sales_invoice_doc):
             try:
                 cbc_InvoiceTypeCode = ET.SubElement(invoice, "cbc:InvoiceTypeCode")
                 cbc_InvoiceTypeCode.set("name", "0100000")
-                cbc_InvoiceTypeCode.text = str( sales_invoice_doc.custom_invoice_type_code)
+                # cbc_InvoiceTypeCode.text = str( sales_invoice_doc.custom_invoice_type_code)
+                cbc_InvoiceTypeCode.text ="388"
                 return invoice
             except Exception as e:
                     frappe.throw(str(e) )
@@ -208,7 +209,8 @@ def doc_Reference(invoice,sales_invoice_doc,invoice_number):
                 cbc_TaxCurrencyCode = ET.SubElement(invoice, "cbc:TaxCurrencyCode")
                 cbc_TaxCurrencyCode.text = sales_invoice_doc.currency
                 cbc_LineCountNumeric = ET.SubElement(invoice, "cbc:LineCountNumeric")     #doubt
-                cbc_LineCountNumeric.text =str( sales_invoice_doc.custom_total_no_of_line)
+                # cbc_LineCountNumeric.text =str( sales_invoice_doc.custom_total_no_of_line)
+                cbc_LineCountNumeric.text ="1"
                 cac_AdditionalDocumentReference = ET.SubElement(invoice, "cac:AdditionalDocumentReference")
                 cbc_ID_1 = ET.SubElement(cac_AdditionalDocumentReference, "cbc:ID")
                 cbc_ID_1.text = sales_invoice_doc.custom_document_id
