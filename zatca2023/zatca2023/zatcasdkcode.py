@@ -289,7 +289,7 @@ def company_Data(invoice,sales_invoice_doc):
                 cbc_IdentificationCode.text = "SA"
                 cac_PartyTaxScheme = ET.SubElement(cac_Party_1, "cac:PartyTaxScheme")
                 cbc_CompanyID = ET.SubElement(cac_PartyTaxScheme, "cbc:CompanyID")
-                cbc_CompanyID.text = "300970806100003"    # Here seller tax id is given
+                cbc_CompanyID.text = "310122393500003"    # Here seller tax id is given
                 # cbc_CompanyID.text = company_doc.tax_id
                 cac_TaxScheme = ET.SubElement(cac_PartyTaxScheme, "cac:TaxScheme")
                 cbc_ID_3 = ET.SubElement(cac_TaxScheme, "cbc:ID")
@@ -720,7 +720,7 @@ def reporting_API(uuid1,hash_value,signed_xmlfile_name):
                     headers = {
                     'accept': 'application/json',
                     'accept-language': 'en',
-                    'Clearance-Status': '1',
+                    'Clearance-Status': '0',
                     'Accept-Version': 'V2',
                     'Authorization': 'Basic' + settings.basic_auth,
                     'Content-Type': 'application/json',
