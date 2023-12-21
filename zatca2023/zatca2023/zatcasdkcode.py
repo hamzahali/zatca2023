@@ -213,7 +213,8 @@ def doc_Reference(invoice,sales_invoice_doc,invoice_number):
                 cbc_LineCountNumeric.text ="1"
                 cac_AdditionalDocumentReference = ET.SubElement(invoice, "cac:AdditionalDocumentReference")
                 cbc_ID_1 = ET.SubElement(cac_AdditionalDocumentReference, "cbc:ID")
-                cbc_ID_1.text = sales_invoice_doc.custom_document_id
+                # cbc_ID_1.text = sales_invoice_doc.custom_document_id
+                cbc_ID_1.text = "1234"
                 cbc_UUID_1 = ET.SubElement(cac_AdditionalDocumentReference, "cbc:UUID")
                 cbc_UUID_1.text = str(get_ICV_code(invoice_number))
                 return invoice  
