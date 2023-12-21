@@ -14,6 +14,7 @@
   "attach_qr_code_doctype",
   "attach_e_invoice_send_status_with_invoice",
   "otp",
+  "sdk_root",
   "pih",
   "urls__api_endpoints_section",
   "select",
@@ -139,12 +140,17 @@
    "fieldname": "basic_auth_production",
    "fieldtype": "Data",
    "label": "Basic Auth from production"
+  },
+  {
+   "fieldname": "sdk_root",
+   "fieldtype": "Data",
+   "label": "SDK Root"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-12-20 18:03:19.375030",
+ "modified": "2023-12-21 13:09:46.653291",
  "modified_by": "Administrator",
  "module": "Zatca2023",
  "name": "Zatca setting",
