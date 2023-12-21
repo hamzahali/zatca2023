@@ -35,7 +35,7 @@ def _execute_in_shell(cmd, verbose=False, low_priority=False, check_exit_code=Fa
                     # ensure it's properly escaped; only a single string argument executes via shell
                     cmd = shlex.join(cmd)
                     # process = subprocess.Popen(command_sign_invoice, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env_variables)               
-                with (tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr):
+                with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
                     kwargs = {"shell": True, "stdout": stdout, "stderr": stderr}
                     if low_priority:
                         kwargs["preexec_fn"] = lambda: os.nice(10)
