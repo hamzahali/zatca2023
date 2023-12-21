@@ -481,6 +481,15 @@ def xml_structuring(invoice,sales_invoice_doc):
             except Exception as e:
                     frappe.throw(str(e) )
 
+def get_latest_generated_csr_file(folder_path='.'):
+                files = [f for f in os.listdir(folder_path) if f.startswith("generated-csr") and os.path.isfile(os.path.join(folder_path, f))]
+                if not files:
+                    return None
+                latest_file = max(files, key=os.path.getmtime)
+                print(latest_file)
+                return os.path.join(folder_path, latest_file)
+
+
 @frappe.whitelist(allow_guest=True)
 def generate_csr():
             try:
@@ -494,7 +503,7 @@ def generate_csr():
                 try:
                     err,out = _execute_in_shell(command_generate_csr)
                     frappe.msgprint(out)
-                    with open("generated-csr-20231218053250.csr", "r") as file_csr:
+                    with open(get_latest_generated_csr_file(), "r") as file_csr:
                         get_csr = file_csr.read()
                     file = frappe.get_doc({
                             "doctype": "File",
@@ -514,7 +523,7 @@ def generate_csr():
 def create_CSID(): 
                 try:
                     settings=frappe.get_doc('Zatca setting')     
-                    with open("generated-csr-20231218053250.csr", "r") as f:
+                    with open(get_latest_generated_csr_file(), "r") as f:
                         csr_contents = f.read()
                     payload = json.dumps({
                     "csr": csr_contents
