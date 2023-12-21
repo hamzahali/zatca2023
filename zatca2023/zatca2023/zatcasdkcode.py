@@ -261,7 +261,8 @@ def company_Data(invoice,sales_invoice_doc):
                 cbc_ID_2.text ="12364569"
                 cac_PostalAddress = ET.SubElement(cac_Party_1, "cac:PostalAddress")
                 cbc_StreetName = ET.SubElement(cac_PostalAddress, "cbc:StreetName")
-                cbc_StreetName.text = company_doc.custom_street
+                # cbc_StreetName.text = company_doc.custom_street
+                cbc_StreetName.text = "comp street"
                 cbc_BuildingNumber = ET.SubElement(cac_PostalAddress, "cbc:BuildingNumber")
                 cbc_BuildingNumber.text = str(company_doc.custom_build_no)
                 cbc_PlotIdentification = ET.SubElement(cac_PostalAddress, "cbc:PlotIdentification")
@@ -298,7 +299,9 @@ def customer_Data(invoice,sales_invoice_doc):
                 cac_PartyIdentification_1 = ET.SubElement(cac_Party_2, "cac:PartyIdentification")
                 cbc_ID_4 = ET.SubElement(cac_PartyIdentification_1, "cbc:ID")
                 cbc_ID_4.set("schemeID", "SAG")
-                cbc_ID_4.text = customer_doc.custom_accounting_customer_id
+                # cbc_ID_4.text = customer_doc.custom_accounting_customer_id
+                
+                cbc_ID_4.text ="543261789"
                 cac_PostalAddress_1 = ET.SubElement(cac_Party_2, "cac:PostalAddress")
                 cbc_StreetName_1 = ET.SubElement(cac_PostalAddress_1, "cbc:StreetName")
                 cbc_StreetName_1.text = customer_doc.custom_street
