@@ -325,12 +325,15 @@ def customer_Data(invoice,sales_invoice_doc):
                 # cbc_CityName_1.text = customer_doc.custom_city
                 cbc_CityName_1.text = "my city"
                 cbc_PostalZone_1 = ET.SubElement(cac_PostalAddress_1, "cbc:PostalZone")
-                cbc_PostalZone_1.text = str(customer_doc.custom_pincode)
+                # cbc_PostalZone_1.text = str(customer_doc.custom_pincode)
+                cbc_PostalZone_1.text = "1235"
                 cbc_CountrySubentity_1 = ET.SubElement(cac_PostalAddress_1, "cbc:CountrySubentity")
-                cbc_CountrySubentity_1.text = customer_doc.custom_sub
+                # cbc_CountrySubentity_1.text = customer_doc.custom_sub
+                cbc_CountrySubentity_1.text = "my sub"
                 cac_Country_1 = ET.SubElement(cac_PostalAddress_1, "cac:Country")
                 cbc_IdentificationCode_1 = ET.SubElement(cac_Country_1, "cbc:IdentificationCode")
-                cbc_IdentificationCode_1.text = customer_doc.custom_country
+                # cbc_IdentificationCode_1.text = customer_doc.custom_country
+                cbc_IdentificationCode_1.text = "my country"
                 cac_PartyTaxScheme_1 = ET.SubElement(cac_Party_2, "cac:PartyTaxScheme")
                 cac_TaxScheme_1 = ET.SubElement(cac_PartyTaxScheme_1, "cac:TaxScheme")
                 cbc_ID_5 = ET.SubElement(cac_TaxScheme_1, "cbc:ID")
@@ -349,6 +352,7 @@ def delivery_And_PaymentMeans(invoice,sales_invoice_doc):
                 cbc_ActualDeliveryDate.text = str(sales_invoice_doc.due_date)
                 cac_PaymentMeans = ET.SubElement(invoice, "cac:PaymentMeans")
                 cbc_PaymentMeansCode = ET.SubElement(cac_PaymentMeans, "cbc:PaymentMeansCode")
+                # cbc_PaymentMeansCode.text = str(sales_invoice_doc.custom_payment_code)
                 cbc_PaymentMeansCode.text = str(sales_invoice_doc.custom_payment_code)
                 return invoice
             except Exception as e:
