@@ -354,7 +354,7 @@ def delivery_And_PaymentMeans(invoice,sales_invoice_doc):
                 cac_PaymentMeans = ET.SubElement(invoice, "cac:PaymentMeans")
                 cbc_PaymentMeansCode = ET.SubElement(cac_PaymentMeans, "cbc:PaymentMeansCode")
                 # cbc_PaymentMeansCode.text = str(sales_invoice_doc.custom_payment_code)
-                cbc_PaymentMeansCode.text = str(sales_invoice_doc.custom_payment_code)
+                cbc_PaymentMeansCode.text = "32"
                 return invoice
             except Exception as e:
                     frappe.throw(str(e) )
