@@ -483,11 +483,12 @@ def xml_structuring(invoice,sales_invoice_doc):
 
 @frappe.whitelist(allow_guest=True)
 def generate_csr():
+            try:
                 settings=frappe.get_doc('Zatca setting')
                 csr_config_file = 'sdkcsrconfig.properties'
                 private_key_file = 'sdkprivatekey.pem'
                 generated_csr_file = 'sdkcsr.pem'
-                SDK_ROOT='/opt/sdk/sdk-2.7'
+                SDK_ROOT=settings.sdk_root
                 path_string=f"export SDK_ROOT={SDK_ROOT} && export FATOORA_HOME=$SDK_ROOT/Apps && export SDK_CONFIG=$SDK_ROOT/Configuration/config.json && export PATH=$PATH:$FATOORA_HOME &&  "
                 command_generate_csr =  path_string  + f'fatoora -csr -csrConfig {csr_config_file} -privateKey {private_key_file} -generatedCsr {generated_csr_file} -pem'
                 try:
@@ -506,7 +507,9 @@ def generate_csr():
                 except Exception as e:
                     frappe.msgprint(err)
                     frappe.msgprint("An error occurred: " + str(e))
-
+            except Exception as e:
+                    frappe.throw(str(e) )
+                    
 @frappe.whitelist(allow_guest=True)
 def create_CSID(): 
                 try:
