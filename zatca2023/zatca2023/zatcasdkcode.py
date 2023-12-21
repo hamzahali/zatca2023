@@ -187,7 +187,7 @@ def invoice_Typecode_Simplified(invoice,sales_invoice_doc):
             try:
                 cbc_InvoiceTypeCode = ET.SubElement(invoice, "cbc:InvoiceTypeCode")
                 cbc_InvoiceTypeCode.set("name", "0200000")
-                cbc_InvoiceTypeCode.text = str( sales_invoice_doc.custom_invoice_type_code)
+                cbc_InvoiceTypeCode.text = "381"
                 return invoice
             except Exception as e:
                     frappe.throw(str(e) )
