@@ -431,7 +431,8 @@ def item_data(invoice,sales_invoice_doc):
                     cbc_Name.text = single_item.item_code
                     cac_ClassifiedTaxCategory = ET.SubElement(cac_Item, "cac:ClassifiedTaxCategory")
                     cbc_ID_11 = ET.SubElement(cac_ClassifiedTaxCategory, "cbc:ID")
-                    cbc_ID_11.text = sales_invoice_doc.custom_item_character
+                    # cbc_ID_11.text = sales_invoice_doc.custom_item_character
+                    cbc_ID_11.text = "S"
                     cbc_Percent_2 = ET.SubElement(cac_ClassifiedTaxCategory, "cbc:Percent")
                     cbc_Percent_2.text =str(item_tax_percentage)
                     cac_TaxScheme_4 = ET.SubElement(cac_ClassifiedTaxCategory, "cac:TaxScheme")
