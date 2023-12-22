@@ -591,7 +591,10 @@ def sign_invoice():
                     match = re.search(r'ERROR', err.decode("utf-8"))
                     if match:
                         frappe.throw(err)
-                    
+
+                    match = re.search(r'ERROR', out.decode("utf-8"))
+                    if match:
+                        frappe.throw(err)
                     
                     
                     match = re.search(r'INVOICE HASH = (.+)', out.decode("utf-8"))
