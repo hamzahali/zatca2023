@@ -587,15 +587,13 @@ def sign_invoice():
                 
                 try:
                     err,out = _execute_in_shell(command_sign_invoice)
-                    frappe.msgprint(out)
-                    frappe.msgprint(err)
                     match = re.search(r'INVOICE HASH = (.+)', out.decode("utf-8"))
                     if match:
                         invoice_hash = match.group(1)
                         frappe.msgprint("Xml file signed successfully and formed the signed xml invoice hash as : " + invoice_hash)
                         return signed_xmlfile_name , path_string
                     else:
-                        frappe.throw("An error occurred2 : " , err.decode("utf-8") + "  " + out.decode("utf-8"))
+                        frappe.throw("An error occurred2 : " , err + " "  + out)
                 except Exception as e:
                     frappe.throw("An error occurred3 : " + str(e))
             
