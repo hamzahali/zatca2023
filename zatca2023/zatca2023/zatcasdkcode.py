@@ -587,8 +587,13 @@ def sign_invoice():
                 
                 try:
                     err,out = _execute_in_shell(command_sign_invoice)
-                    frappe.msgprint(out)
-                    frappe.msgprint(err)
+                    
+                    match = re.search(r'ERROR', err.decode("utf-8"))
+                    if match:
+                        frappe.throw(err)
+                    
+                    
+                    
                     match = re.search(r'INVOICE HASH = (.+)', out.decode("utf-8"))
                     if match:
                         invoice_hash = match.group(1)
