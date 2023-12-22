@@ -583,7 +583,7 @@ def sign_invoice():
                     path_string=f"export SDK_ROOT={SDK_ROOT} && export FATOORA_HOME=$SDK_ROOT/Apps && export SDK_CONFIG=$SDK_ROOT/Configuration/config.json && export PATH=$PATH:$FATOORA_HOME &&  "
                     command_sign_invoice = path_string  + f'fatoora -sign -invoice {xmlfile_name} -signedInvoice {signed_xmlfile_name}'
                 except Exception as e:
-                    frappe.throw("An error occurred: " + str(e))
+                    frappe.throw("An error occurred1 : " + str(e))
                 
                 try:
                     err,out = _execute_in_shell(command_sign_invoice)
@@ -593,9 +593,9 @@ def sign_invoice():
                         frappe.msgprint("Xml file signed successfully and formed the signed xml invoice hash as : " + invoice_hash)
                         return signed_xmlfile_name , path_string
                     else:
-                        frappe.throw("An error occurred: " , err.decode("utf-8") + "  " + out.decode("utf-8"))
+                        frappe.throw("An error occurred2 : " , err.decode("utf-8") + "  " + out.decode("utf-8"))
                 except Exception as e:
-                    frappe.throw("An error occurred: " + str(e))
+                    frappe.throw("An error occurred3 : " + str(e))
             
 def generate_qr_code(signed_xmlfile_name,sales_invoice_doc,path_string):
                 try:
