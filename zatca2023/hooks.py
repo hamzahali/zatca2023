@@ -134,12 +134,12 @@ from . import __version__ as app_version
 #	}
 # }
 
-doc_events = {
+# doc_events = {
     
-    "Sales Invoice": { "on_submit": [
-            "zatca2023.zatca2023.myzatca_test.before_save"
-         ]
-    }}
+#     "Sales Invoice": { "on_submit": [
+#             "zatca2023.zatca2023.zatcasdkcode.before_save"
+#          ]
+#     }}
 
 
 # Scheduled Tasks

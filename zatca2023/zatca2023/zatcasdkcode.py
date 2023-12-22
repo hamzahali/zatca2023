@@ -57,27 +57,32 @@ def _execute_in_shell(cmd, verbose=False, low_priority=False, check_exit_code=Fa
                 return err, out
 
 def get_Tax_for_Item(full_string,item):
+            try:                                          # getting tax percentage and tax amount
                 data = json.loads(full_string)
                 tax_percentage=data.get(item,[0,0])[0]
                 tax_amount = data.get(item, [0, 0])[1]
                 return tax_amount,tax_percentage
+            except Exception as e:
+                    frappe.throw(str(e) )
 
 def get_ICV_code(invoice_number):
-                    icv_code = + int(''.join(filter(str.isdigit, invoice_number))) 
-                    return "46531"
-                    # return icv_code
-
+                try:
+                    icv_code =  re.sub(r'\D', '', invoice_number)   # taking the number part only from doc name
+                    return icv_code
+                except Exception as e:
+                    frappe.throw(str(e) )
+                    
 def  get_Issue_Time(invoice_number): 
                 doc = frappe.get_doc("Sales Invoice", invoice_number)
                 time = get_time(doc.posting_time)
-                issue_time = time.strftime("%H:%M:%S")
+                issue_time = time.strftime("%H:%M:%S")  #time in format of  hour,mints,secnds
                 return issue_time
 
-def invoice_uuid(invoice_number):
-                sales_invoice_doc = frappe.get_doc('Sales Invoice' ,invoice_number)
-                sales_invoice_doc.custom_uuid = str(uuid.uuid1())
-                sales_invoice_doc.save()
-                return sales_invoice_doc.custom_uuid   
+# def invoice_uuid(invoice_number):
+#                 sales_invoice_doc = frappe.get_doc('Sales Invoice' ,invoice_number)
+#                 sales_invoice_doc.custom_uuid = str(uuid.uuid1())
+#                 sales_invoice_doc.save()
+#                 return sales_invoice_doc.custom_uuid   
 def xml_tags():
             try: 
                 invoice = ET.Element("Invoice", xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" )
@@ -185,33 +190,36 @@ def salesinvoice_data(invoice,invoice_number):
                     frappe.throw(str(e) )
 
 def invoice_Typecode_Simplified(invoice,sales_invoice_doc):
-            try:
+            try:                             
                 cbc_InvoiceTypeCode = ET.SubElement(invoice, "cbc:InvoiceTypeCode")
-                cbc_InvoiceTypeCode.set("name", "0200000")
-                cbc_InvoiceTypeCode.text = "388"
+                if sales_invoice_doc.is_return == 0:         
+                    cbc_InvoiceTypeCode.set("name", "0200000")
+                    cbc_InvoiceTypeCode.text = "388"
+                elif sales_invoice_doc.is_return == 1:       # return items and simplified invoice
+                    cbc_InvoiceTypeCode.set("name", "0211010")
+                    cbc_InvoiceTypeCode.text = "383"
                 return invoice
             except Exception as e:
                     frappe.throw(str(e) )
 
 def invoice_Typecode_Standard(invoice,sales_invoice_doc):
             try:
-                cbc_InvoiceTypeCode = ET.SubElement(invoice, "cbc:InvoiceTypeCode")
-                cbc_InvoiceTypeCode.set("name", "0100000")
-                # cbc_InvoiceTypeCode.text = str( sales_invoice_doc.custom_invoice_type_code)
-                cbc_InvoiceTypeCode.text ="388"
-                return invoice
+                    cbc_InvoiceTypeCode = ET.SubElement(invoice, "cbc:InvoiceTypeCode")
+                    cbc_InvoiceTypeCode.set("name", "0100000")
+                    if sales_invoice_doc.is_return == 0:
+                        cbc_InvoiceTypeCode.text = "388"
+                    elif sales_invoice_doc.is_return == 1:     # return items and simplified invoice
+                        cbc_InvoiceTypeCode.text = "381"
+                    return invoice
             except Exception as e:
-                    frappe.throw(str(e) )
-
+                    frappe.throw(str(e))
+                    
 def doc_Reference(invoice,sales_invoice_doc,invoice_number):
             try:
                 cbc_DocumentCurrencyCode = ET.SubElement(invoice, "cbc:DocumentCurrencyCode")
                 cbc_DocumentCurrencyCode.text = sales_invoice_doc.currency
                 cbc_TaxCurrencyCode = ET.SubElement(invoice, "cbc:TaxCurrencyCode")
                 cbc_TaxCurrencyCode.text = sales_invoice_doc.currency
-                cbc_LineCountNumeric = ET.SubElement(invoice, "cbc:LineCountNumeric")     #doubt
-                # cbc_LineCountNumeric.text =str( sales_invoice_doc.custom_total_no_of_line)
-                cbc_LineCountNumeric.text ="1"
                 cac_AdditionalDocumentReference = ET.SubElement(invoice, "cac:AdditionalDocumentReference")
                 cbc_ID_1 = ET.SubElement(cac_AdditionalDocumentReference, "cbc:ID")
                 # cbc_ID_1.text = sales_invoice_doc.custom_document_id
@@ -420,7 +428,7 @@ def item_data(invoice,sales_invoice_doc):
                     cbc_ID_10.text = str(single_item.idx)
                     cbc_InvoicedQuantity = ET.SubElement(cac_InvoiceLine, "cbc:InvoicedQuantity")
                     cbc_InvoicedQuantity.set("unitCode", str(single_item.uom))
-                    cbc_InvoicedQuantity.text = str(single_item.qty)
+                    cbc_InvoicedQuantity.text = str(abs(single_item.qty))
                     cbc_LineExtensionAmount_1 = ET.SubElement(cac_InvoiceLine, "cbc:LineExtensionAmount")
                     cbc_LineExtensionAmount_1.set("currencyID", sales_invoice_doc.currency)
                     cbc_LineExtensionAmount_1.text=  str(single_item.amount)
@@ -462,7 +470,7 @@ def xml_structuring(invoice,sales_invoice_doc):
                 with open(f"xml_files.xml", 'r') as file:
                     xml_string = file.read()
                 xml_dom = minidom.parseString(xml_string)
-                pretty_xml_string = xml_dom.toprettyxml(indent="  ") 
+                pretty_xml_string = xml_dom.toprettyxml(indent="  ")   # created xml into formatted xml form 
                 with open(f"finalzatcaxml.xml", 'w') as file:
                     file.write(pretty_xml_string)
                           # Attach the getting xml for each invoice
@@ -494,12 +502,15 @@ def xml_structuring(invoice,sales_invoice_doc):
                     frappe.throw(str(e) )
 
 def get_latest_generated_csr_file(folder_path='.'):
+            try:
                 files = [f for f in os.listdir(folder_path) if f.startswith("generated-csr") and os.path.isfile(os.path.join(folder_path, f))]
                 if not files:
                     return None
                 latest_file = max(files, key=os.path.getmtime)
                 print(latest_file)
                 return os.path.join(folder_path, latest_file)
+            except Exception as e:
+                    frappe.throw(str(e) )
 
 
 @frappe.whitelist(allow_guest=True)
@@ -596,7 +607,6 @@ def sign_invoice():
                     if match:
                         frappe.throw(out)
                     
-                    
                     match = re.search(r'INVOICE HASH = (.+)', out.decode("utf-8"))
                     if match:
                         invoice_hash = match.group(1)
@@ -681,6 +691,7 @@ def xml_base64_Decode(signed_xmlfile_name):
 
 
 def send_invoice_for_clearance_normal(uuid1, signed_xmlfile_name, hash_value):
+                try:
                     settings = frappe.get_doc('Zatca setting')
                     payload = json.dumps({
                         "invoiceHash": hash_value,
@@ -696,13 +707,17 @@ def send_invoice_for_clearance_normal(uuid1, signed_xmlfile_name, hash_value):
                     settings.save()
                     try:
                         response = requests.request("POST", url=get_API_url(base_url="compliance/invoices"), headers=headers, data=payload)
+                        # frappe.msgprint(response.text)
                         return response.text, get_Clearance_Status(response)
                     except Exception as e:
-                        print(str(e))
+                        frappe.msgprint(str(e))
                         return "error", "NOT_CLEARED"
+                except Exception as e:
+                    frappe.throw(str(e) )
 
 @frappe.whitelist(allow_guest=True)                   
 def production_CSID():
+                try:
                     settings = frappe.get_doc('Zatca setting')
                     payload = json.dumps({
                     "compliance_request_id": settings.compliance_request_id })
@@ -718,6 +733,8 @@ def production_CSID():
                     encoded_value = base64.b64encode(concatenated_value.encode()).decode()
                     settings.set("basic_auth_production", encoded_value)
                     settings.save()
+                except Exception as e:
+                    frappe.throw(str(e) )
 
 def get_Reporting_Status(result):
                         try:
@@ -741,7 +758,7 @@ def reporting_API(uuid1,hash_value,signed_xmlfile_name):
                     'accept-language': 'en',
                     'Clearance-Status': '0',
                     'Accept-Version': 'V2',
-                    'Authorization': 'Basic' + settings.basic_auth,
+                    'Authorization': 'Basic' + settings.basic_auth_production,
                     'Content-Type': 'application/json',
                     'Cookie': 'TS0106293e=0132a679c0639d13d069bcba831384623a2ca6da47fac8d91bef610c47c7119dcdd3b817f963ec301682dae864351c67ee3a402866'
                     }
@@ -775,11 +792,15 @@ def clearance_API(uuid1,hash_value,signed_xmlfile_name):
                     frappe.throw(str(e) )
 
 def zatca_Call(invoice_number):
-                    try:
+                    try:    
+                            
                             invoice= xml_tags()
                             invoice,uuid1,sales_invoice_doc=salesinvoice_data(invoice,invoice_number)
-                            # invoice=invoice_Typecode_Standard(invoice,sales_invoice_doc)
-                            invoice=invoice_Typecode_Simplified(invoice,sales_invoice_doc)
+                            customer_doc= frappe.get_doc("Customer",sales_invoice_doc.customer)
+                            if customer_doc.customer_type == "B2C":
+                                invoice = invoice_Typecode_Simplified(invoice, sales_invoice_doc)
+                            else:
+                                invoice = invoice_Typecode_Standard(invoice, sales_invoice_doc)
                             invoice=doc_Reference(invoice,sales_invoice_doc,invoice_number)
                             invoice=additional_Reference(invoice)
                             invoice=company_Data(invoice,sales_invoice_doc)
@@ -791,10 +812,12 @@ def zatca_Call(invoice_number):
                             signed_xmlfile_name,path_string=sign_invoice()
                             generate_qr_code(signed_xmlfile_name,sales_invoice_doc,path_string)
                             hash_value =generate_hash(signed_xmlfile_name,path_string)
-                            validate_invoice(signed_xmlfile_name,path_string)
+                            # validate_invoice(signed_xmlfile_name,path_string)
                             result,clearance_status=send_invoice_for_clearance_normal(uuid1,signed_xmlfile_name,hash_value)
-                            reporting_API(uuid1,hash_value,signed_xmlfile_name)
-                            # clearance_API(uuid1,hash_value,signed_xmlfile_name)
+                            if customer_doc.customer_type == "B2C":
+                                reporting_API(uuid1, hash_value, signed_xmlfile_name)
+                            else:
+                                clearance_API(uuid1, hash_value, signed_xmlfile_name)
                             current_time =now()
                             if clearance_status == "CLEARED":
                                 frappe.get_doc({"doctype":"Zatca Success log","title":"Zatca invoice call done successfully","message":"This message by Zatca Compliance ","invoice_number": invoice_number,"time":current_time,"zatca_response":result}).insert()    
