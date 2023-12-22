@@ -471,20 +471,25 @@ def xml_structuring(invoice,sales_invoice_doc):
                     if frappe.db.exists("File",{ "attached_to_name": sales_invoice_doc.name, "attached_to_doctype": sales_invoice_doc.doctype }):
                         frappe.db.delete("File",{ "attached_to_name":sales_invoice_doc.name, "attached_to_doctype": sales_invoice_doc.doctype })
                 except Exception as e:
-                    frappe.msgprint(frappe.get_traceback())
-                fileX = frappe.get_doc(
-                    {   "doctype": "File",        
-                        "file_type": "xml",  
-                        "file_name":  "e_invoice_create" + sales_invoice_doc.name + ".xml",
-                        "attached_to_doctype":sales_invoice_doc.doctype,
-                        "attached_to_name":sales_invoice_doc.name, 
-                        "content": pretty_xml_string,
-                        "is_private": 1,})
-                fileX.save()
+                    frappe.throw(frappe.get_traceback())
+                
+                try:
+                    fileX = frappe.get_doc(
+                        {   "doctype": "File",        
+                            "file_type": "xml",  
+                            "file_name":  "E-invoice-" + sales_invoice_doc.name + ".xml",
+                            "attached_to_doctype":sales_invoice_doc.doctype,
+                            "attached_to_name":sales_invoice_doc.name, 
+                            "content": pretty_xml_string,
+                            "is_private": 1,})
+                    fileX.save()
+                except Exception as e:
+                    frappe.throw(frappe.get_traceback())
+                
                 try:
                     frappe.msgprint(frappe.db.get_value('File', {'attached_to_name':sales_invoice_doc.name, 'attached_to_doctype': sales_invoice_doc.doctype}, ['file_name']))
                 except Exception as e:
-                    frappe.msgprint(frappe.get_traceback())
+                    frappe.throw(frappe.get_traceback())
             except Exception as e:
                     frappe.throw(str(e) )
 
@@ -521,8 +526,8 @@ def generate_csr():
                     file.save()
                     frappe.msgprint("CSR generation successful. CSR saved")
                 except Exception as e:
-                    frappe.msgprint(err)
-                    frappe.msgprint("An error occurred: " + str(e))
+                    frappe.throw(err)
+                    frappe.throw("An error occurred: " + str(e))
             except Exception as e:
                     frappe.throw(str(e) )
 
@@ -570,12 +575,16 @@ def create_CSID():
                             frappe.throw("error" + str(e))
 
 def sign_invoice():
-                settings=frappe.get_doc('Zatca setting')
-                xmlfile_name = 'finalzatcaxml.xml'
-                signed_xmlfile_name = 'sdsign.xml'
-                SDK_ROOT= settings.sdk_root
-                path_string=f"export SDK_ROOT={SDK_ROOT} && export FATOORA_HOME=$SDK_ROOT/Apps && export SDK_CONFIG=$SDK_ROOT/Configuration/config.json && export PATH=$PATH:$FATOORA_HOME &&  "
-                command_sign_invoice = path_string  + f'fatoora -sign -invoice {xmlfile_name} -signedInvoice {signed_xmlfile_name}'
+                try:
+                    settings=frappe.get_doc('Zatca setting')
+                    xmlfile_name = 'finalzatcaxml.xml'
+                    signed_xmlfile_name = 'sdsign.xml'
+                    SDK_ROOT= settings.sdk_root
+                    path_string=f"export SDK_ROOT={SDK_ROOT} && export FATOORA_HOME=$SDK_ROOT/Apps && export SDK_CONFIG=$SDK_ROOT/Configuration/config.json && export PATH=$PATH:$FATOORA_HOME &&  "
+                    command_sign_invoice = path_string  + f'fatoora -sign -invoice {xmlfile_name} -signedInvoice {signed_xmlfile_name}'
+                except Exception as e:
+                    frappe.throw("An error occurred: " + str(e))
+                
                 try:
                     err,out = _execute_in_shell(command_sign_invoice)
                     match = re.search(r'INVOICE HASH = (.+)', out.decode("utf-8"))
@@ -586,7 +595,7 @@ def sign_invoice():
                     else:
                         frappe.msgprint("Invoice Hash not found in the output.")
                 except Exception as e:
-                    frappe.msgprint("An error occurred: " + str(e))
+                    frappe.throw("An error occurred: " + str(e))
             
 def generate_qr_code(signed_xmlfile_name,sales_invoice_doc,path_string):
                 try:
@@ -609,7 +618,7 @@ def generate_qr_code(signed_xmlfile_name,sales_invoice_doc,path_string):
                     else:
                         frappe.msgprint("QR Code not found in the output.")    
                 except Exception as e:
-                    frappe.msgprint(f"Error:{e} ")
+                    frappe.throw(f"Error:{e} ")
                     return None
 
            
@@ -625,7 +634,7 @@ def generate_hash(signed_xmlfile_name,path_string):
                     else:
                         frappe.msgprint("Hash value not found in the log entry.")
                 except Exception as e:
-                    frappe.msgprint(f"Error:{e} ")
+                    frappe.throw(f"Error:{e} ")
                         
 def validate_invoice(signed_xmlfile_name,path_string):               
                 try:
@@ -639,7 +648,7 @@ def validate_invoice(signed_xmlfile_name,path_string):
                         else:
                             frappe.msgprint("Successful")
                 except Exception as e:
-                            frappe.msgprint(f"An error occurred: {str(e)}")  
+                            frappe.throw(f"An error occurred: {str(e)}")  
                
 def get_Clearance_Status(result):
                     try:
