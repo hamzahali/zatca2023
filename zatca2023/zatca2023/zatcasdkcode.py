@@ -593,7 +593,7 @@ def sign_invoice():
                         frappe.msgprint("Xml file signed successfully and formed the signed xml invoice hash as : " + invoice_hash)
                         return signed_xmlfile_name , path_string
                     else:
-                        frappe.msgprint("Invoice Hash not found in the output.")
+                        frappe.throw("An error occurred: " + err)
                 except Exception as e:
                     frappe.throw("An error occurred: " + str(e))
             
