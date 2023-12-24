@@ -370,7 +370,7 @@ def customer_Data(invoice,sales_invoice_doc):
                 cbc_RegistrationName_1.text = sales_invoice_doc.customer
                 return invoice
             except Exception as e:
-                    frappe.throw("Customer Address not complete." str(e) )
+                    frappe.throw("Customer Address not complete.", str(e) )
 
 def delivery_And_PaymentMeans(invoice,sales_invoice_doc, is_return):
             try:
