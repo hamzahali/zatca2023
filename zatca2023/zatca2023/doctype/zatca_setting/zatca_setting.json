@@ -7,6 +7,7 @@
  "field_order": [
   "detailsotp_tab",
   "zatca_invoice_enabled",
+  "background",
   "send_invoice_to_zatca",
   "create_csr",
   "attach_xml_with_invoice",
@@ -145,12 +146,18 @@
    "fieldname": "sdk_root",
    "fieldtype": "Data",
    "label": "SDK Root"
+  },
+  {
+   "default": "0",
+   "fieldname": "background",
+   "fieldtype": "Check",
+   "label": "Send e-invoice background"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-12-22 01:16:08.108446",
+ "modified": "2023-12-22 16:20:00.777798",
  "modified_by": "Administrator",
  "module": "Zatca2023",
  "name": "Zatca setting",

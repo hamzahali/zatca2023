@@ -25,6 +25,22 @@ import frappe
 import requests
 from frappe.utils.data import  get_time
 
+import base64
+
+def clean_up_certificate_string(certificate_string):
+    return certificate_string.replace("-----BEGIN CERTIFICATE-----\n", "").replace("-----END CERTIFICATE-----", "").strip()
+
+def get_auth_headers(certificate=None, secret=None):
+    if certificate and secret:
+        certificate_stripped = clean_up_certificate_string(certificate)
+        certificate_base64 = base64.b64encode(certificate_stripped.encode()).decode()
+        credentials = f"{certificate_base64}:{secret}"
+        basic_token = base64.b64encode(credentials.encode()).decode()
+        return basic_token
+        
+    return {}
+
+
 def _execute_in_shell(cmd, verbose=False, low_priority=False, check_exit_code=False):
                 # using Popen instead of os.system - as recommended by python docs
                 import shlex
@@ -78,11 +94,7 @@ def  get_Issue_Time(invoice_number):
                 issue_time = time.strftime("%H:%M:%S")  #time in format of  hour,mints,secnds
                 return issue_time
 
-# def invoice_uuid(invoice_number):
-#                 sales_invoice_doc = frappe.get_doc('Sales Invoice' ,invoice_number)
-#                 sales_invoice_doc.custom_uuid = str(uuid.uuid1())
-#                 sales_invoice_doc.save()
-#                 return sales_invoice_doc.custom_uuid   
+  
 def xml_tags():
             try: 
                 invoice = ET.Element("Invoice", xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" )
@@ -179,7 +191,7 @@ def salesinvoice_data(invoice,invoice_number):
                 cbc_ID = ET.SubElement(invoice, "cbc:ID")
                 cbc_ID.text = str(sales_invoice_doc.name)
                 cbc_UUID = ET.SubElement(invoice, "cbc:UUID")
-                cbc_UUID.text = "4106d90c-81e8-11ee-93fd-020017019f27"
+                cbc_UUID.text =  str(uuid.uuid1())
                 uuid1= cbc_UUID.text
                 cbc_IssueDate = ET.SubElement(invoice, "cbc:IssueDate")
                 cbc_IssueDate.text = str(sales_invoice_doc.posting_date)
@@ -196,7 +208,7 @@ def invoice_Typecode_Simplified(invoice,sales_invoice_doc):
                     cbc_InvoiceTypeCode.set("name", "0200000")
                     cbc_InvoiceTypeCode.text = "388"
                 elif sales_invoice_doc.is_return == 1:       # return items and simplified invoice
-                    cbc_InvoiceTypeCode.set("name", "0211010")
+                    cbc_InvoiceTypeCode.set("name", "0211000")
                     cbc_InvoiceTypeCode.text = "383"
                 return invoice
             except Exception as e:
@@ -205,7 +217,7 @@ def invoice_Typecode_Simplified(invoice,sales_invoice_doc):
 def invoice_Typecode_Standard(invoice,sales_invoice_doc):
             try:
                     cbc_InvoiceTypeCode = ET.SubElement(invoice, "cbc:InvoiceTypeCode")
-                    cbc_InvoiceTypeCode.set("name", "0100000")
+                    cbc_InvoiceTypeCode.set("name", "0100000") 
                     if sales_invoice_doc.is_return == 0:
                         cbc_InvoiceTypeCode.text = "388"
                     elif sales_invoice_doc.is_return == 1:     # return items and simplified invoice
@@ -240,7 +252,7 @@ def additional_Reference(invoice):
                 cbc_EmbeddedDocumentBinaryObject = ET.SubElement(cac_Attachment, "cbc:EmbeddedDocumentBinaryObject")
                 cbc_EmbeddedDocumentBinaryObject.set("mimeCode", "text/plain")
                 # cbc_EmbeddedDocumentBinaryObject.text = settings.pih
-                cbc_EmbeddedDocumentBinaryObject.text = "NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ=="
+                cbc_EmbeddedDocumentBinaryObject.text = "L0Awl814W4ycuFvjDVL/vIW08mNRNAwqfdlF5i/3dpU="
             # QR CODE ------------------------------------------------------------------------------------------------------------------------------------------------------------------
                 cac_AdditionalDocumentReference22 = ET.SubElement(invoice, "cac:AdditionalDocumentReference")
                 cbc_ID_1_12 = ET.SubElement(cac_AdditionalDocumentReference22, "cbc:ID")
@@ -297,15 +309,15 @@ def company_Data(invoice,sales_invoice_doc):
                 cbc_IdentificationCode.text = "SA"
                 cac_PartyTaxScheme = ET.SubElement(cac_Party_1, "cac:PartyTaxScheme")
                 cbc_CompanyID = ET.SubElement(cac_PartyTaxScheme, "cbc:CompanyID")
-                cbc_CompanyID.text = "310122393500003"    # Here seller tax id is given
-                # cbc_CompanyID.text = company_doc.tax_id
+                # cbc_CompanyID.text = "310122393500003"    # Here seller tax id is given
+                cbc_CompanyID.text = company_doc.tax_id
                 cac_TaxScheme = ET.SubElement(cac_PartyTaxScheme, "cac:TaxScheme")
                 cbc_ID_3 = ET.SubElement(cac_TaxScheme, "cbc:ID")
                 cbc_ID_3.text = "VAT"
                 cac_PartyLegalEntity = ET.SubElement(cac_Party_1, "cac:PartyLegalEntity")
                 cbc_RegistrationName = ET.SubElement(cac_PartyLegalEntity, "cbc:RegistrationName")
-                # cbc_RegistrationName.text = sales_invoice_doc.company
-                cbc_RegistrationName.text = "ABCD Limited"
+                cbc_RegistrationName.text = sales_invoice_doc.company
+                # cbc_RegistrationName.text = "ABCD Limited"
                 return invoice
             except Exception as e:
                     frappe.throw(str(e) )
@@ -323,30 +335,32 @@ def customer_Data(invoice,sales_invoice_doc):
                 cbc_ID_4.text ="543261789"
                 cac_PostalAddress_1 = ET.SubElement(cac_Party_2, "cac:PostalAddress")
                 cbc_StreetName_1 = ET.SubElement(cac_PostalAddress_1, "cbc:StreetName")
-                # cbc_StreetName_1.text = customer_doc.custom_street
-                cbc_StreetName_1.text = "street"
+                # cbc_StreetName_1.text = "street"
+                address_string = customer_doc.primary_address
+                address_components = address_string.split('<br>')
+                cbc_StreetName_1.text = address_components[0] 
                 cbc_BuildingNumber_1 = ET.SubElement(cac_PostalAddress_1, "cbc:BuildingNumber")
                 # cbc_BuildingNumber_1.text = str(customer_doc.custom_building_no)
                 cbc_BuildingNumber_1.text = "1235"
                 cbc_PlotIdentification_1 = ET.SubElement(cac_PostalAddress_1, "cbc:PlotIdentification")
                 # cbc_PlotIdentification_1.text = customer_doc.custom_plot_id_no
-                cbc_PlotIdentification_1.text = "my plot num"
+                cbc_PlotIdentification_1.text = address_components[1] 
                 cbc_CitySubdivisionName_1 = ET.SubElement(cac_PostalAddress_1, "cbc:CitySubdivisionName")
                 # cbc_CitySubdivisionName_1.text = customer_doc.custom_sub
                 cbc_CitySubdivisionName_1.text = "my sub"
                 cbc_CityName_1 = ET.SubElement(cac_PostalAddress_1, "cbc:CityName")
                 # cbc_CityName_1.text = customer_doc.custom_city
-                cbc_CityName_1.text = "my city"
+                cbc_CityName_1.text = address_components[2] 
                 cbc_PostalZone_1 = ET.SubElement(cac_PostalAddress_1, "cbc:PostalZone")
                 # cbc_PostalZone_1.text = str(customer_doc.custom_pincode)
-                cbc_PostalZone_1.text = "12345"
+                cbc_PostalZone_1.text = address_components[4] 
                 cbc_CountrySubentity_1 = ET.SubElement(cac_PostalAddress_1, "cbc:CountrySubentity")
                 # cbc_CountrySubentity_1.text = customer_doc.custom_sub
-                cbc_CountrySubentity_1.text = "my sub"
+                cbc_CountrySubentity_1.text = address_components[3] 
                 cac_Country_1 = ET.SubElement(cac_PostalAddress_1, "cac:Country")
                 cbc_IdentificationCode_1 = ET.SubElement(cac_Country_1, "cbc:IdentificationCode")
-                # cbc_IdentificationCode_1.text = customer_doc.custom_country
-                cbc_IdentificationCode_1.text = "SA"
+                cbc_IdentificationCode_1.text = "SA" # customer_doc.custom_country
+                # cbc_IdentificationCode_1.text = address_components[5] 
                 cac_PartyTaxScheme_1 = ET.SubElement(cac_Party_2, "cac:PartyTaxScheme")
                 cac_TaxScheme_1 = ET.SubElement(cac_PartyTaxScheme_1, "cac:TaxScheme")
                 cbc_ID_5 = ET.SubElement(cac_TaxScheme_1, "cbc:ID")
@@ -358,7 +372,7 @@ def customer_Data(invoice,sales_invoice_doc):
             except Exception as e:
                     frappe.throw(str(e) )
 
-def delivery_And_PaymentMeans(invoice,sales_invoice_doc):
+def delivery_And_PaymentMeans(invoice,sales_invoice_doc, is_return):
             try:
                 cac_Delivery = ET.SubElement(invoice, "cac:Delivery")
                 cbc_ActualDeliveryDate = ET.SubElement(cac_Delivery, "cbc:ActualDeliveryDate")
@@ -367,6 +381,24 @@ def delivery_And_PaymentMeans(invoice,sales_invoice_doc):
                 cbc_PaymentMeansCode = ET.SubElement(cac_PaymentMeans, "cbc:PaymentMeansCode")
                 # cbc_PaymentMeansCode.text = str(sales_invoice_doc.custom_payment_code)
                 cbc_PaymentMeansCode.text = "32"
+                
+                if is_return == 1:
+                    cbc_InstructionNote = ET.SubElement(cac_PaymentMeans, "cbc:InstructionNote")
+                    cbc_InstructionNote.text = "Cancellation"
+                
+                return invoice
+            except Exception as e:
+                    frappe.throw(str(e) )
+                    
+def billing_reference_for_credit_and_debit_note(invoice,sales_invoice_doc):
+            frappe.msgprint("credit and debit note")
+            try:
+                #details of original invoice
+                cac_BillingReference = ET.SubElement(invoice, "cac:BillingReference")
+                cac_InvoiceDocumentReference = ET.SubElement(cac_BillingReference, "cac:InvoiceDocumentReference")
+                cbc_ID13 = ET.SubElement(cac_InvoiceDocumentReference, "cbc:ID")
+                cbc_ID13.text = sales_invoice_doc.return_against  # field from return against invoice. 
+                
                 return invoice
             except Exception as e:
                     frappe.throw(str(e) )
@@ -377,14 +409,14 @@ def tax_Data(invoice,sales_invoice_doc):
                 cac_TaxTotal = ET.SubElement(invoice, "cac:TaxTotal")
                 cbc_TaxAmount = ET.SubElement(cac_TaxTotal, "cbc:TaxAmount")
                 cbc_TaxAmount.set("currencyID", sales_invoice_doc.currency) # SAR is given earlier directly
-                cbc_TaxAmount.text =str( sales_invoice_doc.base_total_taxes_and_charges)
+                cbc_TaxAmount.text =str( abs(sales_invoice_doc.base_total_taxes_and_charges))
                 cac_TaxSubtotal = ET.SubElement(cac_TaxTotal, "cac:TaxSubtotal")
                 cbc_TaxableAmount = ET.SubElement(cac_TaxSubtotal, "cbc:TaxableAmount")
                 cbc_TaxableAmount.set("currencyID", sales_invoice_doc.currency)
-                cbc_TaxableAmount.text =str(sales_invoice_doc.base_net_total)
+                cbc_TaxableAmount.text =str(abs(sales_invoice_doc.base_net_total))
                 cbc_TaxAmount_2 = ET.SubElement(cac_TaxSubtotal, "cbc:TaxAmount")
                 cbc_TaxAmount_2.set("currencyID", sales_invoice_doc.currency)
-                cbc_TaxAmount_2.text =  str(sales_invoice_doc.base_total_taxes_and_charges)
+                cbc_TaxAmount_2.text =  str(abs(sales_invoice_doc.base_total_taxes_and_charges))
                 cac_TaxCategory_1 = ET.SubElement(cac_TaxSubtotal, "cac:TaxCategory")
                 cbc_ID_8 = ET.SubElement(cac_TaxCategory_1, "cbc:ID")
                 cbc_ID_8.text =  "S"
@@ -397,23 +429,23 @@ def tax_Data(invoice,sales_invoice_doc):
                 cac_TaxTotal = ET.SubElement(invoice, "cac:TaxTotal")
                 cbc_TaxAmount = ET.SubElement(cac_TaxTotal, "cbc:TaxAmount")
                 cbc_TaxAmount.set("currencyID", sales_invoice_doc.currency)
-                cbc_TaxAmount.text =str( sales_invoice_doc.base_total_taxes_and_charges)
+                cbc_TaxAmount.text =str( abs(sales_invoice_doc.base_total_taxes_and_charges))
                 cac_LegalMonetaryTotal = ET.SubElement(invoice, "cac:LegalMonetaryTotal")
                 cbc_LineExtensionAmount = ET.SubElement(cac_LegalMonetaryTotal, "cbc:LineExtensionAmount")
                 cbc_LineExtensionAmount.set("currencyID", sales_invoice_doc.currency)
-                cbc_LineExtensionAmount.text =  str(sales_invoice_doc.base_net_total)
+                cbc_LineExtensionAmount.text =  str(abs(sales_invoice_doc.base_net_total))
                 cbc_TaxExclusiveAmount = ET.SubElement(cac_LegalMonetaryTotal, "cbc:TaxExclusiveAmount")
                 cbc_TaxExclusiveAmount.set("currencyID", sales_invoice_doc.currency)
-                cbc_TaxExclusiveAmount.text = str(sales_invoice_doc.base_net_total)
+                cbc_TaxExclusiveAmount.text = str(abs(sales_invoice_doc.base_net_total))
                 cbc_TaxInclusiveAmount = ET.SubElement(cac_LegalMonetaryTotal, "cbc:TaxInclusiveAmount")
                 cbc_TaxInclusiveAmount.set("currencyID", sales_invoice_doc.currency)
-                cbc_TaxInclusiveAmount.text = str(sales_invoice_doc.grand_total)
+                cbc_TaxInclusiveAmount.text = str(abs(sales_invoice_doc.grand_total))
                 cbc_AllowanceTotalAmount = ET.SubElement(cac_LegalMonetaryTotal, "cbc:AllowanceTotalAmount")
                 cbc_AllowanceTotalAmount.set("currencyID", sales_invoice_doc.currency)
                 cbc_AllowanceTotalAmount.text = str(sales_invoice_doc.base_change_amount)
                 cbc_PayableAmount = ET.SubElement(cac_LegalMonetaryTotal, "cbc:PayableAmount")
                 cbc_PayableAmount.set("currencyID", sales_invoice_doc.currency)
-                cbc_PayableAmount.text = str(sales_invoice_doc.grand_total) 
+                cbc_PayableAmount.text = str(abs(sales_invoice_doc.grand_total)) 
                 return invoice
              
             except Exception as e:
@@ -431,14 +463,14 @@ def item_data(invoice,sales_invoice_doc):
                     cbc_InvoicedQuantity.text = str(abs(single_item.qty))
                     cbc_LineExtensionAmount_1 = ET.SubElement(cac_InvoiceLine, "cbc:LineExtensionAmount")
                     cbc_LineExtensionAmount_1.set("currencyID", sales_invoice_doc.currency)
-                    cbc_LineExtensionAmount_1.text=  str(single_item.amount)
+                    cbc_LineExtensionAmount_1.text=  str(abs(single_item.amount))
                     cac_TaxTotal_2 = ET.SubElement(cac_InvoiceLine, "cac:TaxTotal")
                     cbc_TaxAmount_3 = ET.SubElement(cac_TaxTotal_2, "cbc:TaxAmount")
                     cbc_TaxAmount_3.set("currencyID", sales_invoice_doc.currency)
-                    cbc_TaxAmount_3.text = str(item_tax_amount)
+                    cbc_TaxAmount_3.text = str(abs(item_tax_amount))
                     cbc_RoundingAmount = ET.SubElement(cac_TaxTotal_2, "cbc:RoundingAmount")
                     cbc_RoundingAmount.set("currencyID", sales_invoice_doc.currency)
-                    cbc_RoundingAmount.text=str(single_item.amount + item_tax_amount)
+                    cbc_RoundingAmount.text=str(abs(single_item.amount) + abs(item_tax_amount) )
                     cac_Item = ET.SubElement(cac_InvoiceLine, "cac:Item")
                     cbc_Name = ET.SubElement(cac_Item, "cbc:Name")
                     cbc_Name.text = single_item.item_code
@@ -573,9 +605,13 @@ def create_CSID():
                     'Cookie': 'TS0106293e=0132a679c07382ce7821148af16b99da546c13ce1dcddbef0e19802eb470e539a4d39d5ef63d5c8280b48c529f321e8b0173890e4f'
                     }
                     response = requests.request("POST", url=get_API_url(base_url="compliance"), headers=headers, data=payload)
-                    frappe.msgprint(response.text)
+                    frappe.msgprint(str(response.content))
+                    # frappe.msgprint(response.status_code)
+                    # frappe.msgprint(response.text)
                     frappe.msgprint("the CSID formed through url")
+                    frappe.throw("NO CSID formed through url")
                     data=json.loads(response.text)
+                    # compliance_cert =get_auth_headers(data["binarySecurityToken"],data["secret"])
                     concatenated_value = data["binarySecurityToken"] + ":" + data["secret"]
                     encoded_value = base64.b64encode(concatenated_value.encode()).decode()
                     settings.set("basic_auth", encoded_value)
@@ -719,18 +755,23 @@ def send_invoice_for_clearance_normal(uuid1, signed_xmlfile_name, hash_value):
 def production_CSID():
                 try:
                     settings = frappe.get_doc('Zatca setting')
+                    # frappe.msgprint(settings.basic_auth)
                     payload = json.dumps({
                     "compliance_request_id": settings.compliance_request_id })
                     headers = {
                     'accept': 'application/json',
                     'Accept-Version': 'V2',
                     'Authorization': 'Basic'+ settings.basic_auth,
+                    # 'Authorization': 'Basic'+ "VkZWc1NsRXhTalpSTUU1Q1dsaHNibEZZWkVwUmEwWnVVMVZrUWxkWWJGcFhhazAxVTJzeFFtSXdaRVJSTTBaSVZUQXdNRTlWU2tKVVZVNU9VV3hXTkZKWWNFSlZhMHB1Vkd4YVExRlZNVTVSTWpGWFUyMUtkVmR1V21oV01EVjNXVzB4YW1Rd2FHOVpNRFZPWVdzeE5GUlhjRXBsYXpGeFVWaHdVRlpGYkRaV01taHFWR3N4Y1ZvemFFNWhhMncxVkZkd1JtUXdNVVZSV0dSWVlXdEpNVlJXUm5wa01FNVNWMVZTVjFWV1JraFNXR1JMVmtaR1ZWSldiRTVSYkd4SVVWUkdWbEpWVGpOa01VSk9aV3RHTTFReFVtcGtNRGxGVVZSS1RsWkZSak5VVlZKQ1pXc3hWRm96WkV0YU1XeEZWbXhHVWxNd1VrTlBWVXBzVWpKNE5sTlZWbk5rVjAxNlVXMTRXazB4U25kWmFra3dXakZGZVU5WVZtdFRSWEJ2VjFST1UyTkhTblJaTW1SVVlrVTFSVlJXVGxwa01IQkNWMVZTVjFWV1JrVlNSVWw0VmxaVmVGVllVbEJTUjJONVZHdFNUbVZGTVZWVlZFWk5Wa1V4TTFSVlVuSk5NREZGV2pOa1QyRnJWak5VVlZKQ1pEQXhObEZzWkU1UmEwWklVVzVzZUZJeFRrNU9SR3hDV2pCV1NGRnNUakZSYTBwQ1VWVjBRazFGYkVKUmEzaFNZVWhDV1UxRlNrVmtSVVpTVDFWS05rOUhaM2ROYms1M1ZrWkdTbFZWVGpKT1YyYzBWRmhHTkdGRVVuQlRSVEYzVVcwNGRsRnRPWEJXUm1ScllsTjBVMWRYV2t0aVZYQlBaR3BrV1dSdVZUVk5NbHAyVjFjME1FNVVhRTlTTVVwdVltNW5NazVIV2xkaGJUbFdUREZDTVdGdFpHcFhXR1J1V1RBeE0xSkZSbHBTUmxwVFRVWlNRbFZWWjNaUmEwWktaREJHUlZFd1NucGFNV3hGVm14SmQxVnJTa3BTTTBaT1UxVmtkV05GYkVoaE1ERktVakpvVGxaSVRqTlVNVVphVWtaYVVsVlZWa1ZTUld3MFZFWmFVMVpHV2tsa00yeE5WbXhLVlZacmFETmxhM2hZVm0xMFRtRnJjSFJVVm1SU1RrVjRXRlpVU2xwV1JXd3dWRlpTUm1WRk9VUk5SRlphWVd4Vk1GUkdaRkpPVm14VllVY3hUbFpGV25OVWExSlNUVlp3Y1ZKWFdrNVJha0pJVVRKa2RGVXdjSFppVmxFMFlWaG9jbEZXUmtaVVZWSTJWRmhrVGxKSGMzcFVWVkp1WkRBMWNWSllaRTVTUlVZelZGaHdSbFJyTVVKak1HUkNUVlpXUmxKRlJqTlNWVEZWVWxob1RsWkZWbE5VVlVVMFVqQkZlRlpWVmtoYU0yUktWbGQ0UzFVeFNrVlRWRlpPWVcxME5GTkljRUphUlVwdVZHeGFRMUZVYUU1U2JYaExZa1pzV0dReVpHRlhSVFIzVjFab1UySkZiRWhTYlhCclVqSjNlVmxXYUZOalJuQlpWRmhrUkZveGJFcFRNamxoVTFod2NVMUZWa0prTUd4RlZURkdRbVF4U201VFYyaENWRmhHVTFOclJYSlZSRTVKVkVac2FWUXdNRFJPVldoTFRETmtUMlZ0UmxkT01XUnFXbTVKZGxkcVRqRmpWR3hMVFRCV1ZHTnNXbHBsYTBad1VsVkdkazV0YUdwUFZGSlRVMGR3YldRelRuZFpVemwzVjBaYWRWWnBPWFpWVjBaT1QxUk9hVTVzU1RKaVYyUmhWMFJDTVZGV1RYbE5WVnB1VUZFOVBRPT06eXRabHl6YklXY0wrUHlETytFd1JqWHRHSEp4SHB3cXdJYUVsaGxMQVJZQT0=",
+                    # 'Authorization': 'Basic'+ "VFVsSlExSjZRME5CWlhsblFYZEpRa0ZuU1VkQldYbFpXak01U2sxQmIwZERRM0ZIVTAwME9VSkJUVU5OUWxWNFJYcEJVa0puVGxaQ1FVMU5RMjFXU21KdVduWmhWMDV3WW0xamQwaG9ZMDVOYWsxNFRXcEplazFxUVhwUFZFbDZWMmhqVGsxcVozaE5ha2w1VFdwRmQwMUVRWGRYYWtJMVRWRnpkME5SV1VSV1VWRkhSWGRLVkZGVVJWbE5RbGxIUVRGVlJVTjNkMUJOZWtGM1QxUmpkMDlFUVRKTlZFRjNUVVJCZWsxVFozZEtaMWxFVmxGUlMwUkNPVUpsUjJ4NlNVVnNkV016UW14Wk0xSndZakkwWjFFeU9YVmtTRXBvV1ROU2NHSnRZMmRUYkU1RVRWTlpkMHBCV1VSV1VWRkVSRUl4VlZVeFVYUlBSR2N5VGtSTmVFMVVVVEZNVkUxM1RVUnJNMDFFWjNkT2FrVjNUVVJCZDAxNlFsZE5Ra0ZIUW5seFIxTk5ORGxCWjBWSFFsTjFRa0pCUVV0Qk1FbEJRa3hSYUhCWU1FSkVkRUZST1VKNk9HZ3dNbk53VkZGSlVVTjJOV2c0VFhGNGFEUnBTRTF3UW04dlFtOXBWRmRrYlN0U1dXWktiVXBPZGpkWWRuVTVNMlp2V1c0ME5UaE9SMUpuYm5nMk5HWldhbTlWTDFCMWFtZGpXWGRuWTAxM1JFRlpSRlpTTUZSQlVVZ3ZRa0ZKZDBGRVEwSnpaMWxFVmxJd1VrSkpSM0ZOU1VkdWNFbEhhMDFKUjJoTlZITjNUMUZaUkZaUlVVVkVSRWw0VEZaU1ZGWklkM2xNVmxKVVZraDNla3hYVm10TmFrcHRUVmRSTkV4WFZUSlpWRWwwVFZSRmVFOURNRFZaYWxVMFRGZFJOVmxVYUcxTlZFWnNUa1JSTVZwcVJXWk5RakJIUTJkdFUwcHZiVlE0YVhoclFWRkZUVVI2VFhkTlJHc3pUVVJuZDA1cVJYZE5SRUYzVFhwRlRrMUJjMGRCTVZWRlJFRjNSVTFVUlhoTlZFVlNUVUU0UjBFeFZVVkhaM2RKVld4S1UxSkVTVFZOYW10NFNIcEJaRUpuVGxaQ1FUaE5SbXhLYkZsWGQyZGFXRTR3V1ZoU2JFbEhSbXBrUjJ3eVlWaFNjRnBZVFhkRFoxbEpTMjlhU1hwcU1FVkJkMGxFVTFGQmQxSm5TV2hCVFhGU1NrRXJVRE5JVEZsaVQwMDROVWhLTDNkT2VtRldOMWRqWm5JdldqTjFjVGxLTTBWVGNsWlpla0ZwUlVGdk5taGpPVFJTU0dwbWQzTndZUzl3V0ZadVZpOXZVV0ZOT1ROaU5sSTJiV2RhV0RCMVFWTXlNVVpuUFE9PTp5dFpseXpiSVdjTCtQeURPK0V3UmpYdEdISnhIcHdxd0lhRWxobExBUllBPQ==",
                     'Content-Type': 'application/json' }
                     response = requests.request("POST", url=get_API_url(base_url="production/csids"), headers=headers, data=payload)
                     frappe.msgprint(response.text)
                     data=json.loads(response.text)
                     concatenated_value = data["binarySecurityToken"] + ":" + data["secret"]
                     encoded_value = base64.b64encode(concatenated_value.encode()).decode()
+                    with open(f"cert.pem", 'w') as file:
+                        file.write(base64.b64decode(data["binarySecurityToken"]).decode('utf-8'))
                     settings.set("basic_auth_production", encoded_value)
                     settings.save()
                 except Exception as e:
@@ -746,6 +787,7 @@ def get_Reporting_Status(result):
                             print(e) 
 
 def reporting_API(uuid1,hash_value,signed_xmlfile_name):
+                # frappe.msgprint(xml_base64_Decode(signed_xmlfile_name))
                 try:
                     settings = frappe.get_doc('Zatca setting')
                     payload = json.dumps({
@@ -758,17 +800,22 @@ def reporting_API(uuid1,hash_value,signed_xmlfile_name):
                     'accept-language': 'en',
                     'Clearance-Status': '0',
                     'Accept-Version': 'V2',
+                    # 'Authorization': "Basic VFVsSlJESjZRME5CTkVOblFYZEpRa0ZuU1ZSaWQwRkJaSEZFYlVsb2NYTnFjRzAxUTNkQlFrRkJRakp2UkVGTFFtZG5jV2hyYWs5UVVWRkVRV3BDYWsxU1ZYZEZkMWxMUTFwSmJXbGFVSGxNUjFGQ1IxSlpSbUpIT1dwWlYzZDRSWHBCVWtKbmIwcHJhV0ZLYXk5SmMxcEJSVnBHWjA1dVlqTlplRVo2UVZaQ1oyOUthMmxoU21zdlNYTmFRVVZhUm1ka2JHVklVbTVaV0hBd1RWSjNkMGRuV1VSV1VWRkVSWGhPVlZVeGNFWlRWVFZYVkRCc1JGSlRNVlJrVjBwRVVWTXdlRTFDTkZoRVZFbDVUVVJOZVU5RVJURk9SRmw2VFd4dldFUlVTWGxOUkUxNlRVUkZNVTVFV1hwTmJHOTNWRlJGVEUxQmEwZEJNVlZGUW1oTlExVXdSWGhFYWtGTlFtZE9Wa0pCYjFSQ1ZYQm9ZMjFzZVUxU2IzZEhRVmxFVmxGUlRFVjRSa3RhVjFKcldWZG5aMUZ1U21oaWJVNXZUVlJKZWs1RVJWTk5Ra0ZIUVRGVlJVRjRUVXBOVkVrelRHcEJkVTFETkhoTlJsbDNSVUZaU0V0dldrbDZhakJEUVZGWlJrczBSVVZCUVc5RVVXZEJSVVF2ZDJJeWJHaENka0pKUXpoRGJtNWFkbTkxYnpaUGVsSjViWGx0VlRsT1YxSm9TWGxoVFdoSFVrVkNRMFZhUWpSRlFWWnlRblZXTW5oWWFYaFpOSEZDV1dZNVpHUmxjbnByVnpsRWQyUnZNMGxzU0dkeFQwTkJhVzkzWjJkSmJVMUpSMHhDWjA1V1NGSkZSV2RaVFhkbldVTnJabXBDT0UxU2QzZEhaMWxFVmxGUlJVUkNUWGxOYWtsNVRXcE5lVTVFVVRCTmVsRjZZVzFhYlU1RVRYbE5VamgzU0ZGWlMwTmFTVzFwV2xCNVRFZFJRa0ZSZDFCTmVrVjNUVlJqTVUxNmF6Tk9SRUYzVFVSQmVrMVJNSGREZDFsRVZsRlJUVVJCVVhoTlJFVjRUVkpGZDBSM1dVUldVVkZoUkVGb1ZGbFhNWGRpUjFWblVsUkZXazFDWTBkQk1WVkZSSGQzVVZVeVJuUmpSM2hzU1VWS01XTXpUbkJpYlZaNlkzcEJaRUpuVGxaSVVUUkZSbWRSVldoWFkzTmlZa3BvYWtRMVdsZFBhM2RDU1V4REszZE9WbVpMV1hkSWQxbEVWbEl3YWtKQ1ozZEdiMEZWWkcxRFRTdDNZV2R5UjJSWVRsb3pVRzF4ZVc1TE5Xc3hkRk00ZDFSbldVUldVakJtUWtWamQxSlVRa1J2UlVkblVEUlpPV0ZJVWpCalJHOTJURE5TZW1SSFRubGlRelUyV1ZoU2FsbFROVzVpTTFsMVl6SkZkbEV5Vm5sa1JWWjFZMjA1YzJKRE9WVlZNWEJHVTFVMVYxUXdiRVJTVXpGVVpGZEtSRkZUTUhoTWJVNTVZa1JEUW5KUldVbExkMWxDUWxGVlNFRlJSVVZuWVVGM1oxb3dkMkpuV1VsTGQxbENRbEZWU0UxQlIwZFpiV2d3WkVoQk5reDVPVEJqTTFKcVkyMTNkV1Z0UmpCWk1rVjFXakk1TWt4dVRtaE1NRTVzWTI1U1JtSnVTblppUjNkMlZrWk9ZVkpYYkhWa2JUbHdXVEpXVkZFd1JYaE1iVlkwWkVka2FHVnVVWFZhTWpreVRHMTRkbGt5Um5OWU1WSlVWMnRXU2xSc1dsQlRWVTVHVEZaT01WbHJUa0pNVkVWdlRWTnJkVmt6U2pCTlEzTkhRME56UjBGUlZVWkNla0ZDYUdnNWIyUklVbmRQYVRoMlpFaE9NRmt6U25OTWJuQm9aRWRPYUV4dFpIWmthVFY2V1ZNNWRsa3pUbmROUVRSSFFURlZaRVIzUlVJdmQxRkZRWGRKU0dkRVFXUkNaMDVXU0ZOVlJVWnFRVlZDWjJkeVFtZEZSa0pSWTBSQloxbEpTM2RaUWtKUlZVaEJkMDEzU25kWlNrdDNXVUpDUVVkRFRuaFZTMEpDYjNkSFJFRkxRbWRuY2tKblJVWkNVV05FUVdwQlMwSm5aM0pDWjBWR1FsRmpSRUY2UVV0Q1oyZHhhR3RxVDFCUlVVUkJaMDVLUVVSQ1IwRnBSVUY1VG1oNVkxRXpZazVzVEVaa1QxQnNjVmxVTmxKV1VWUlhaMjVMTVVkb01FNUlaR05UV1RSUVprTXdRMGxSUTFOQmRHaFlkblkzZEdWMFZVdzJPVmRxY0RoQ2VHNU1URTEzWlhKNFdtaENibVYzYnk5blJqTkZTa0U5UFE9PTpmOVlSaG9wTi9HN3gwVEVDT1k2bktTQ0hMTllsYjVyaUFIU0ZQSUNvNHF3PQ==" ,
+                    # 'Authorization': "Basic VFVsSlJESjZRME5CTkVOblFYZEpRa0ZuU1ZSaWQwRkJaSEZFYlVsb2NYTnFjRzAxUTNkQlFrRkJRakp2UkVGTFFtZG5jV2hyYWs5UVVWRkVRV3BDYWsxU1ZYZEZkMWxMUTFwSmJXbGFVSGxNUjFGQ1IxSlpSbUpIT1dwWlYzZDRSWHBCVWtKbmIwcHJhV0ZLYXk5SmMxcEJSVnBHWjA1dVlqTlplRVo2UVZaQ1oyOUthMmxoU21zdlNYTmFRVVZhUm1ka2JHVklVbTVaV0hBd1RWSjNkMGRuV1VSV1VWRkVSWGhPVlZVeGNFWlRWVFZYVkRCc1JGSlRNVlJrVjBwRVVWTXdlRTFDTkZoRVZFbDVUVVJOZVU5RVJURk9SRmw2VFd4dldFUlVTWGxOUkUxNlRVUkZNVTVFV1hwTmJHOTNWRlJGVEUxQmEwZEJNVlZGUW1oTlExVXdSWGhFYWtGTlFtZE9Wa0pCYjFSQ1ZYQm9ZMjFzZVUxU2IzZEhRVmxFVmxGUlRFVjRSa3RhVjFKcldWZG5aMUZ1U21oaWJVNXZUVlJKZWs1RVJWTk5Ra0ZIUVRGVlJVRjRUVXBOVkVrelRHcEJkVTFETkhoTlJsbDNSVUZaU0V0dldrbDZhakJEUVZGWlJrczBSVVZCUVc5RVVXZEJSVVF2ZDJJeWJHaENka0pKUXpoRGJtNWFkbTkxYnpaUGVsSjViWGx0VlRsT1YxSm9TWGxoVFdoSFVrVkNRMFZhUWpSRlFWWnlRblZXTW5oWWFYaFpOSEZDV1dZNVpHUmxjbnByVnpsRWQyUnZNMGxzU0dkeFQwTkJhVzkzWjJkSmJVMUpSMHhDWjA1V1NGSkZSV2RaVFhkbldVTnJabXBDT0UxU2QzZEhaMWxFVmxGUlJVUkNUWGxOYWtsNVRXcE5lVTVFVVRCTmVsRjZZVzFhYlU1RVRYbE5VamgzU0ZGWlMwTmFTVzFwV2xCNVRFZFJRa0ZSZDFCTmVrVjNUVlJqTVUxNmF6Tk9SRUYzVFVSQmVrMVJNSGREZDFsRVZsRlJUVVJCVVhoTlJFVjRUVkpGZDBSM1dVUldVVkZoUkVGb1ZGbFhNWGRpUjFWblVsUkZXazFDWTBkQk1WVkZSSGQzVVZVeVJuUmpSM2hzU1VWS01XTXpUbkJpYlZaNlkzcEJaRUpuVGxaSVVUUkZSbWRSVldoWFkzTmlZa3BvYWtRMVdsZFBhM2RDU1V4REszZE9WbVpMV1hkSWQxbEVWbEl3YWtKQ1ozZEdiMEZWWkcxRFRTdDNZV2R5UjJSWVRsb3pVRzF4ZVc1TE5Xc3hkRk00ZDFSbldVUldVakJtUWtWamQxSlVRa1J2UlVkblVEUlpPV0ZJVWpCalJHOTJURE5TZW1SSFRubGlRelUyV1ZoU2FsbFROVzVpTTFsMVl6SkZkbEV5Vm5sa1JWWjFZMjA1YzJKRE9WVlZNWEJHVTFVMVYxUXdiRVJTVXpGVVpGZEtSRkZUTUhoTWJVNTVZa1JEUW5KUldVbExkMWxDUWxGVlNFRlJSVVZuWVVGM1oxb3dkMkpuV1VsTGQxbENRbEZWU0UxQlIwZFpiV2d3WkVoQk5reDVPVEJqTTFKcVkyMTNkV1Z0UmpCWk1rVjFXakk1TWt4dVRtaE1NRTVzWTI1U1JtSnVTblppUjNkMlZrWk9ZVkpYYkhWa2JUbHdXVEpXVkZFd1JYaE1iVlkwWkVka2FHVnVVWFZhTWpreVRHMTRkbGt5Um5OWU1WSlVWMnRXU2xSc1dsQlRWVTVHVEZaT01WbHJUa0pNVkVWdlRWTnJkVmt6U2pCTlEzTkhRME56UjBGUlZVWkNla0ZDYUdnNWIyUklVbmRQYVRoMlpFaE9NRmt6U25OTWJuQm9aRWRPYUV4dFpIWmthVFY2V1ZNNWRsa3pUbmROUVRSSFFURlZaRVIzUlVJdmQxRkZRWGRKU0dkRVFXUkNaMDVXU0ZOVlJVWnFRVlZDWjJkeVFtZEZSa0pSWTBSQloxbEpTM2RaUWtKUlZVaEJkMDEzU25kWlNrdDNXVUpDUVVkRFRuaFZTMEpDYjNkSFJFRkxRbWRuY2tKblJVWkNVV05FUVdwQlMwSm5aM0pDWjBWR1FsRmpSRUY2UVV0Q1oyZHhhR3RxVDFCUlVVUkJaMDVLUVVSQ1IwRnBSVUY1VG1oNVkxRXpZazVzVEVaa1QxQnNjVmxVTmxKV1VWUlhaMjVMTVVkb01FNUlaR05UV1RSUVprTXdRMGxSUTFOQmRHaFlkblkzZEdWMFZVdzJPVmRxY0RoQ2VHNU1URTEzWlhKNFdtaENibVYzYnk5blJqTkZTa0U5UFE9PTpmOVlSaG9wTi9HN3gwVEVDT1k2bktTQ0hMTllsYjVyaUFIU0ZQSUNvNHF3PQ==",
                     'Authorization': 'Basic' + settings.basic_auth_production,
                     'Content-Type': 'application/json',
                     'Cookie': 'TS0106293e=0132a679c0639d13d069bcba831384623a2ca6da47fac8d91bef610c47c7119dcdd3b817f963ec301682dae864351c67ee3a402866'
                     }
                     try:
-                        response = requests.request("POST", url=get_API_url(base_url="invoices/reporting/single"), headers=headers, data=payload)
+                        # response = requests.request("POST", url=get_API_url(base_url="invoices/reporting/single"), headers=headers, data=payload)
+                        response = requests.request("POST", url="https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal/invoices/reporting/single", headers=headers, data=payload)
+                        # frappe.msgprint("Reporting API response: " + response.text)
                         frappe.msgprint(response.text , get_Reporting_Status(response))
                     except Exception as e:    
                         frappe.msgprint(str(e)) 
                         frappe.msgprint ("error","NOT_REPORTED")
                 except Exception as e:
+                    frappe.msgprint ("error","NOT-REPORTED")
                     frappe.throw(str(e) )
                     
 def clearance_API(uuid1,hash_value,signed_xmlfile_name):
@@ -793,7 +840,6 @@ def clearance_API(uuid1,hash_value,signed_xmlfile_name):
 
 def zatca_Call(invoice_number):
                     try:    
-                            
                             invoice= xml_tags()
                             invoice,uuid1,sales_invoice_doc=salesinvoice_data(invoice,invoice_number)
                             customer_doc= frappe.get_doc("Customer",sales_invoice_doc.customer)
@@ -805,7 +851,10 @@ def zatca_Call(invoice_number):
                             invoice=additional_Reference(invoice)
                             invoice=company_Data(invoice,sales_invoice_doc)
                             invoice=customer_Data(invoice,sales_invoice_doc)
-                            invoice=delivery_And_PaymentMeans(invoice,sales_invoice_doc)
+                            invoice=delivery_And_PaymentMeans(invoice,sales_invoice_doc, sales_invoice_doc.is_return)
+                            
+                            if sales_invoice_doc.is_return == 1:
+                                invoice=billing_reference_for_credit_and_debit_note(invoice,sales_invoice_doc)
                             invoice=tax_Data(invoice,sales_invoice_doc)
                             invoice=item_data(invoice,sales_invoice_doc)
                             pretty_xml_string=xml_structuring(invoice,sales_invoice_doc)
@@ -820,7 +869,7 @@ def zatca_Call(invoice_number):
                                 clearance_API(uuid1, hash_value, signed_xmlfile_name)
                             current_time =now()
                             if clearance_status == "CLEARED":
-                                frappe.get_doc({"doctype":"Zatca Success log","title":"Zatca invoice call done successfully","message":"This message by Zatca Compliance ","invoice_number": invoice_number,"time":current_time,"zatca_response":result}).insert()    
+                                frappe.get_doc({"doctype":"Zatca Success log","title":"Zatca invoice call done successfully","message":"This message by Zatca Compliance ","custom_uuid":uuid1,"invoice_number": invoice_number,"time":current_time,"zatca_response":result}).insert()    
                             else:
                                 frappe.log_error(title='Zatca invoice call failed in clearance status',message=frappe.get_traceback())
                             return (json.dumps(result))
