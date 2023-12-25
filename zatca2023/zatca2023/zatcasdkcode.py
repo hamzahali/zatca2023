@@ -282,14 +282,14 @@ def company_Data(invoice,sales_invoice_doc):
                 cac_PartyIdentification = ET.SubElement(cac_Party_1, "cac:PartyIdentification")
                 cbc_ID_2 = ET.SubElement(cac_PartyIdentification, "cbc:ID")
                 cbc_ID_2.set("schemeID", "CRN")
-                cbc_ID_2.text =customer_doc.tax_id
+                cbc_ID_2.text ="2051053469"   # COmpany CR may change later by field
                 address_list = frappe.get_list("Address", filters={"is_your_company_address": "1"}, fields=["address_line1", "address_line2","city","pincode","state"])
                 for address in address_list:
                     cac_PostalAddress = ET.SubElement(cac_Party_1, "cac:PostalAddress")
                     cbc_StreetName = ET.SubElement(cac_PostalAddress, "cbc:StreetName")
                     cbc_StreetName.text = address.address_line1
                     cbc_BuildingNumber = ET.SubElement(cac_PostalAddress, "cbc:BuildingNumber")
-                    cbc_BuildingNumber.text = "6871"
+                    cbc_BuildingNumber.text = "6819"
                     cbc_PlotIdentification = ET.SubElement(cac_PostalAddress, "cbc:PlotIdentification")
                     cbc_PlotIdentification.text =  address.address_line1
                     cbc_CitySubdivisionName = ET.SubElement(cac_PostalAddress, "cbc:CitySubdivisionName")
@@ -800,7 +800,28 @@ def get_Reporting_Status(result):
                         except Exception as e:
                             print(e) 
 
-def reporting_API(uuid1,hash_value,signed_xmlfile_name):
+def success_Log(response,uuid1,invoice_number):
+        try:
+            current_time = frappe.utils.now()
+            frappe.get_doc({
+                "doctype": "Zatca Success log",
+                "title": "Zatca invoice call done successfully",
+                "message": "This message by Zatca Compliance",
+                "uuid": uuid1,
+                "invoice_number": invoice_number,
+                "time": current_time,
+                "zatca_response": response
+            }).insert()
+        except Exception as e:
+            frappe.throw("Error in success log  " + str(e))
+
+def error_Log():
+        try:
+              frappe.log_error(title='Zatca invoice call failed in clearance status',message=frappe.get_traceback())
+        except Exception as e:
+            frappe.throw("Error in error log  " + str(e))     
+
+def reporting_API(uuid1,hash_value,signed_xmlfile_name,invoice_number):
                 # frappe.msgprint(xml_base64_Decode(signed_xmlfile_name))
                 try:
                     settings = frappe.get_doc('Zatca setting')
@@ -826,6 +847,11 @@ def reporting_API(uuid1,hash_value,signed_xmlfile_name):
                         # response = requests.request("POST", url="https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal/invoices/reporting/single", headers=headers, data=payload)
                         frappe.msgprint("Reporting API response: " + response.text)
                         frappe.msgprint(response.text , get_Reporting_Status(response))
+                        if response.status_code == 200:
+                            success_Log( response.text,uuid1, invoice_number)
+                        else:
+                            error_Log()
+                        
                     except Exception as e:    
                         frappe.msgprint(str(e)) 
                         frappe.msgprint ("error","NOT_REPORTED")
@@ -833,7 +859,7 @@ def reporting_API(uuid1,hash_value,signed_xmlfile_name):
                     frappe.msgprint ("error","NOT-REPORTED")
                     frappe.throw("error in reporting api" + str(e) )
                     
-def clearance_API(uuid1,hash_value,signed_xmlfile_name):
+def clearance_API(uuid1,hash_value,signed_xmlfile_name,invoice_number):
                 try:
                     settings = frappe.get_doc('Zatca setting')
                     payload = json.dumps({
@@ -850,6 +876,11 @@ def clearance_API(uuid1,hash_value,signed_xmlfile_name):
                     'Cookie': 'TS0106293e=0132a679c03c628e6c49de86c0f6bb76390abb4416868d6368d6d7c05da619c8326266f5bc262b7c0c65a6863cd3b19081d64eee99' }
                     response = requests.request("POST", url=get_API_url(base_url="invoices/clearance/single"), headers=headers, data=payload)
                     frappe.msgprint(response.text)
+                    if response.status_code == 200:
+                            success_Log(response.text,uuid1, invoice_number)
+                    else:
+                            error_Log()
+                        
                 except Exception as e:
                     frappe.throw("error in clearance api" + str(e) )
 
@@ -881,9 +912,9 @@ def zatca_Call(invoice_number):
                             # result,clearance_status=send_invoice_for_clearance_normal(uuid1,signed_xmlfile_name,hash_value)
                             # frappe.msgprint(customer_doc.custom_b2c)
                             if customer_doc.custom_b2c == 1:
-                                reporting_API(uuid1, hash_value, signed_xmlfile_name)
+                                reporting_API(uuid1, hash_value, signed_xmlfile_name,invoice_number)
                             else:
-                                clearance_API(uuid1, hash_value, signed_xmlfile_name)
+                                clearance_API(uuid1, hash_value, signed_xmlfile_name,invoice_number)
                             # current_time =now()
                             # if clearance_status == "CLEARED":
                             #     frappe.get_doc({"doctype":"Zatca Success log","title":"Zatca invoice call done successfully","message":"This message by Zatca Compliance ","uuid":uuid1,"invoice_number": invoice_number,"time":current_time,"zatca_response":result}).insert()    
