@@ -281,11 +281,9 @@ def company_Data(invoice,sales_invoice_doc):
                 cac_PartyIdentification = ET.SubElement(cac_Party_1, "cac:PartyIdentification")
                 cbc_ID_2 = ET.SubElement(cac_PartyIdentification, "cbc:ID")
                 cbc_ID_2.set("schemeID", "CRN")
-                try:
-                    cbc_ID_2.text =company_doc.custom_accounting_supplier_party_id
-                # cbc_ID_2.text ="1234567890"
-                except Exception as e:
-                    frappe.throw("error occured in company supplier id "+ str(e) )
+               
+                cbc_ID_2.text ="1234567890"
+             
                 cac_PostalAddress = ET.SubElement(cac_Party_1, "cac:PostalAddress")
                 cbc_StreetName = ET.SubElement(cac_PostalAddress, "cbc:StreetName")
                 # cbc_StreetName.text = company_doc.custom_street
