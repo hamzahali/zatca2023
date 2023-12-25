@@ -460,7 +460,7 @@ def item_data(invoice,sales_invoice_doc):
                     cbc_TaxAmount_3.text = str(abs(round(item_tax_amount,2)))
                     cbc_RoundingAmount = ET.SubElement(cac_TaxTotal_2, "cbc:RoundingAmount")
                     cbc_RoundingAmount.set("currencyID", sales_invoice_doc.currency)
-                    cbc_RoundingAmount.text=str(abs(single_item.amount) + abs(item_tax_amount) )
+                    cbc_RoundingAmount.text=str(abs(single_item.amount) + abs(round(item_tax_amount,2)) )
                     cac_Item = ET.SubElement(cac_InvoiceLine, "cac:Item")
                     cbc_Name = ET.SubElement(cac_Item, "cbc:Name")
                     cbc_Name.text = single_item.item_code
