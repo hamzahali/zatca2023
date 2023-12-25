@@ -883,7 +883,7 @@ def zatca_Call(invoice_number):
                             signed_xmlfile_name,path_string=sign_invoice()
                             generate_qr_code(signed_xmlfile_name,sales_invoice_doc,path_string)
                             hash_value =generate_hash(signed_xmlfile_name,path_string)
-                            validate_invoice(signed_xmlfile_name,path_string)
+                            # validate_invoice(signed_xmlfile_name,path_string)
                             # frappe.msgprint("validated and stopped it here")
                             # result,clearance_status=send_invoice_for_clearance_normal(uuid1,signed_xmlfile_name,hash_value)
                             if customer_doc.customer_type == "B2C":
