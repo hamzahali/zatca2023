@@ -283,32 +283,25 @@ def company_Data(invoice,sales_invoice_doc):
                 cbc_ID_2 = ET.SubElement(cac_PartyIdentification, "cbc:ID")
                 cbc_ID_2.set("schemeID", "CRN")
                 cbc_ID_2.text =customer_doc.tax_id
-
-                cac_PostalAddress = ET.SubElement(cac_Party_1, "cac:PostalAddress")
-                cbc_StreetName = ET.SubElement(cac_PostalAddress, "cbc:StreetName")
-                # cbc_StreetName.text = company_doc.custom_street
-                cbc_StreetName.text ="3117 Al Qusur Dist."
-                cbc_BuildingNumber = ET.SubElement(cac_PostalAddress, "cbc:BuildingNumber")
-                # cbc_BuildingNumber.text = str(company_doc.custom_build_no)
-                cbc_BuildingNumber.text = "1235"
-                cbc_PlotIdentification = ET.SubElement(cac_PostalAddress, "cbc:PlotIdentification")
-                # cbc_PlotIdentification.text =  company_doc.custom_plot_id_no
-                cbc_PlotIdentification.text =  "4562"
-                cbc_CitySubdivisionName = ET.SubElement(cac_PostalAddress, "cbc:CitySubdivisionName")
-                # cbc_CitySubdivisionName.text = company_doc.custom_sub
-                cbc_CitySubdivisionName.text = "my sub"
-                cbc_CityName = ET.SubElement(cac_PostalAddress, "cbc:CityName")
-                # cbc_CityName.text = company_doc.custom_city
-                cbc_CityName.text = "my city"
-                cbc_PostalZone = ET.SubElement(cac_PostalAddress, "cbc:PostalZone")
-                # cbc_PostalZone.text = str(company_doc.custom_pincode)
-                cbc_PostalZone.text = "12345"
-                cbc_CountrySubentity = ET.SubElement(cac_PostalAddress, "cbc:CountrySubentity")
-                # cbc_CountrySubentity.text = company_doc.custom_state
-                cbc_CountrySubentity.text = "my state"
+                address_list = frappe.get_list("Address", filters={"is_your_company_address": "1"}, fields=["address_line1", "address_line2","city","pincode","state"])
+                for address in address_list:
+                    cac_PostalAddress = ET.SubElement(cac_Party_1, "cac:PostalAddress")
+                    cbc_StreetName = ET.SubElement(cac_PostalAddress, "cbc:StreetName")
+                    cbc_StreetName.text = address.address_line1
+                    cbc_BuildingNumber = ET.SubElement(cac_PostalAddress, "cbc:BuildingNumber")
+                    cbc_BuildingNumber.text = "6871"
+                    cbc_PlotIdentification = ET.SubElement(cac_PostalAddress, "cbc:PlotIdentification")
+                    cbc_PlotIdentification.text =  address.address_line1
+                    cbc_CitySubdivisionName = ET.SubElement(cac_PostalAddress, "cbc:CitySubdivisionName")
+                    cbc_CitySubdivisionName.text = address.address_line2
+                    cbc_CityName = ET.SubElement(cac_PostalAddress, "cbc:CityName")
+                    cbc_CityName.text = address.city
+                    cbc_PostalZone = ET.SubElement(cac_PostalAddress, "cbc:PostalZone")
+                    cbc_PostalZone.text = address.pincode
+                    cbc_CountrySubentity = ET.SubElement(cac_PostalAddress, "cbc:CountrySubentity")
+                    cbc_CountrySubentity.text = address.state
                 cac_Country = ET.SubElement(cac_PostalAddress, "cac:Country")
                 cbc_IdentificationCode = ET.SubElement(cac_Country, "cbc:IdentificationCode")
-                # cbc_IdentificationCode.text = company_doc.custom_country_name
                 cbc_IdentificationCode.text = "SA"
                 cac_PartyTaxScheme = ET.SubElement(cac_Party_1, "cac:PartyTaxScheme")
                 cbc_CompanyID = ET.SubElement(cac_PartyTaxScheme, "cbc:CompanyID")
@@ -867,17 +860,16 @@ def zatca_Call(invoice_number):
                             invoice= xml_tags()
                             invoice,uuid1,sales_invoice_doc=salesinvoice_data(invoice,invoice_number)
                             customer_doc= frappe.get_doc("Customer",sales_invoice_doc.customer)
-                            if customer_doc.customer_type == "B2C":
+                            if customer_doc.custom_b2c == 1:
                                 invoice = invoice_Typecode_Simplified(invoice, sales_invoice_doc)
                             else:
                                 invoice = invoice_Typecode_Standard(invoice, sales_invoice_doc)
+
                             invoice=doc_Reference(invoice,sales_invoice_doc,invoice_number)
-                            
                             invoice=additional_Reference(invoice)
                             invoice=company_Data(invoice,sales_invoice_doc)
                             invoice=customer_Data(invoice,sales_invoice_doc)
-                            invoice=delivery_And_PaymentMeans(invoice,sales_invoice_doc, sales_invoice_doc.is_return)
-                            
+                            invoice=delivery_And_PaymentMeans(invoice,sales_invoice_doc, sales_invoice_doc.is_return) 
                             invoice=tax_Data(invoice,sales_invoice_doc)
                             invoice=item_data(invoice,sales_invoice_doc)
                             pretty_xml_string=xml_structuring(invoice,sales_invoice_doc)
@@ -887,7 +879,8 @@ def zatca_Call(invoice_number):
                             # validate_invoice(signed_xmlfile_name,path_string)
                             # frappe.msgprint("validated and stopped it here")
                             # result,clearance_status=send_invoice_for_clearance_normal(uuid1,signed_xmlfile_name,hash_value)
-                            if customer_doc.customer_type == "B2C":
+                            # frappe.msgprint(customer_doc.custom_b2c)
+                            if customer_doc.custom_b2c == 1:
                                 reporting_API(uuid1, hash_value, signed_xmlfile_name)
                             else:
                                 clearance_API(uuid1, hash_value, signed_xmlfile_name)
