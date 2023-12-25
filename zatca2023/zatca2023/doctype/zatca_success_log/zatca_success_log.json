@@ -10,9 +10,7 @@
   "title",
   "message",
   "invoice_number",
-  "time",
-  "zatca_response",
-  "uuid"
+  "time"
  ],
  "fields": [
   {
@@ -36,21 +34,11 @@
    "fieldname": "time",
    "fieldtype": "Data",
    "label": "Time"
-  },
-  {
-   "fieldname": "zatca_response",
-   "fieldtype": "Text",
-   "label": "Zatca Response"
-  },
-  {
-   "fieldname": "uuid",
-   "fieldtype": "Text",
-   "label": "UUID"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-12-25 10:25:40.169791",
+ "modified": "2023-12-25 10:28:20.320755",
  "modified_by": "Administrator",
  "module": "Zatca2023",
  "name": "Zatca Success log",
