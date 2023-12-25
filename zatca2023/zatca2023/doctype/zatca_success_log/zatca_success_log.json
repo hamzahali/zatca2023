@@ -37,7 +37,7 @@
   },
   {
    "fieldname": "zatca_response",
-   "fieldtype": "Long Text",
+   "fieldtype": "Data",
    "label": "Zatca Response"
   },
   {
@@ -48,7 +48,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-12-25 08:36:00.245307",
+ "modified": "2023-12-25 10:17:02.608960",
  "modified_by": "Administrator",
  "module": "Zatca2023",
  "name": "Zatca Success log",
