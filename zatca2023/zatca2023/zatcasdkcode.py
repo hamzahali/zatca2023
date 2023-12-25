@@ -86,7 +86,7 @@ def get_ICV_code(invoice_number):
                     icv_code =  re.sub(r'\D', '', invoice_number)   # taking the number part only from doc name
                     return icv_code
                 except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error in getting icv number",str(e) )
                     
 def  get_Issue_Time(invoice_number): 
                 doc = frappe.get_doc("Sales Invoice", invoice_number)
@@ -181,7 +181,7 @@ def xml_tags():
                 X509SerialNumber.text = "2475382886904809774818644480820936050208702411"
                 return invoice
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error in xml tags formation",str(e) )
 
 def salesinvoice_data(invoice,invoice_number):
             try:
@@ -199,7 +199,7 @@ def salesinvoice_data(invoice,invoice_number):
                 cbc_IssueTime.text = get_Issue_Time(invoice_number)
                 return invoice ,uuid1 ,sales_invoice_doc
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error occured in salesinvoice data",str(e) )
 
 def invoice_Typecode_Simplified(invoice,sales_invoice_doc):
             try:                             
@@ -212,7 +212,7 @@ def invoice_Typecode_Simplified(invoice,sales_invoice_doc):
                     cbc_InvoiceTypeCode.text = "381"
                 return invoice
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error occured in simplified invoice typecode",str(e) )
 
 def invoice_Typecode_Standard(invoice,sales_invoice_doc):
             try:
@@ -224,7 +224,7 @@ def invoice_Typecode_Standard(invoice,sales_invoice_doc):
                         cbc_InvoiceTypeCode.text = "381"
                     return invoice
             except Exception as e:
-                    frappe.throw(str(e))
+                    frappe.throw("Error in standard invoice type code",str(e))
                     
 def doc_Reference(invoice,sales_invoice_doc,invoice_number):
             try:
@@ -242,7 +242,7 @@ def doc_Reference(invoice,sales_invoice_doc,invoice_number):
                 cbc_UUID_1.text = str(get_ICV_code(invoice_number))
                 return invoice  
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("Error occured in str(e) )
 
 def additional_Reference(invoice):
             try:
