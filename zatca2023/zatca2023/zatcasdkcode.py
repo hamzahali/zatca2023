@@ -246,15 +246,15 @@ def doc_Reference(invoice,sales_invoice_doc,invoice_number):
 
 def additional_Reference(invoice):
             try:
-                # settings=frappe.get_doc('Zatca setting')
+                settings=frappe.get_doc('Zatca setting')
                 cac_AdditionalDocumentReference2 = ET.SubElement(invoice, "cac:AdditionalDocumentReference")
                 cbc_ID_1_1 = ET.SubElement(cac_AdditionalDocumentReference2, "cbc:ID")
                 cbc_ID_1_1.text = "PIH"
                 cac_Attachment = ET.SubElement(cac_AdditionalDocumentReference2, "cac:Attachment")
                 cbc_EmbeddedDocumentBinaryObject = ET.SubElement(cac_Attachment, "cbc:EmbeddedDocumentBinaryObject")
                 cbc_EmbeddedDocumentBinaryObject.set("mimeCode", "text/plain")
-                # cbc_EmbeddedDocumentBinaryObject.text = settings.pih
-                cbc_EmbeddedDocumentBinaryObject.text = "L0Awl814W4ycuFvjDVL/vIW08mNRNAwqfdlF5i/3dpU="
+                cbc_EmbeddedDocumentBinaryObject.text = settings.pih
+                # cbc_EmbeddedDocumentBinaryObject.text = "L0Awl814W4ycuFvjDVL/vIW08mNRNAwqfdlF5i/3dpU="
             # QR CODE ------------------------------------------------------------------------------------------------------------------------------------------------------------------
                 cac_AdditionalDocumentReference22 = ET.SubElement(invoice, "cac:AdditionalDocumentReference")
                 cbc_ID_1_12 = ET.SubElement(cac_AdditionalDocumentReference22, "cbc:ID")
@@ -325,9 +325,9 @@ def customer_Data(invoice,sales_invoice_doc):
                 cac_Party_2 = ET.SubElement(cac_AccountingCustomerParty, "cac:Party")
                 cac_PartyIdentification_1 = ET.SubElement(cac_Party_2, "cac:PartyIdentification")
                 cbc_ID_4 = ET.SubElement(cac_PartyIdentification_1, "cbc:ID")
-                cbc_ID_4.set("schemeID", "SAG")
-                # cbc_ID_4.text =customer_doc.tax_id
-                cbc_ID_4.text ="543261789"
+                cbc_ID_4.set("schemeID", "CRN")
+                cbc_ID_4.text =customer_doc.tax_id
+                # cbc_ID_4.text ="543261789"
                 if int(frappe.__version__.split('.')[0]) == 15:
                     address = frappe.get_doc("Address", customer_doc.customer_primary_address)    
                 else:
@@ -382,7 +382,6 @@ def delivery_And_PaymentMeans(invoice,sales_invoice_doc, is_return):
                     frappe.throw("Delivery and payment means failed"+ str(e) )
                     
 def billing_reference_for_credit_and_debit_note(invoice,sales_invoice_doc):
-            frappe.msgprint("credit and debit note")
             try:
                 #details of original invoice
                 cac_BillingReference = ET.SubElement(invoice, "cac:BillingReference")
@@ -497,7 +496,6 @@ def xml_structuring(invoice,sales_invoice_doc):
                 with open(f"finalzatcaxml.xml", 'w') as file:
                     file.write(pretty_xml_string)
                           # Attach the getting xml for each invoice
-                frappe.msgprint(frappe.session.user)
                 try:
                     if frappe.db.exists("File",{ "attached_to_name": sales_invoice_doc.name, "attached_to_doctype": sales_invoice_doc.doctype }):
                         frappe.db.delete("File",{ "attached_to_name":sales_invoice_doc.name, "attached_to_doctype": sales_invoice_doc.doctype })
@@ -736,6 +734,8 @@ def xml_base64_Decode(signed_xmlfile_name):
 
 
 def send_invoice_for_clearance_normal(uuid1, signed_xmlfile_name, hash_value):
+                #Dont call this fucntion- New functions created for multi step validation
+                frappe.throw("send_invoice_for_clearance_normal not used anymore") #Dont call this fucntion- New functions created for multi step validation
                 try:
                     settings = frappe.get_doc('Zatca setting')
                     payload = json.dumps({
@@ -846,9 +846,11 @@ def reporting_API(uuid1,hash_value,signed_xmlfile_name,invoice_number):
                     try:
                         response = requests.request("POST", url=get_API_url(base_url="invoices/reporting/single"), headers=headers, data=payload)
                         # response = requests.request("POST", url="https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal/invoices/reporting/single", headers=headers, data=payload)
+                        frappe.msgprint("Zatca Response status code: " + str(response.status_code))
                         frappe.msgprint("Reporting API response: " + response.text)
-                        frappe.msgprint(response.text , get_Reporting_Status(response))
                         if response.status_code == 200:
+                            settings.pih = hash_value
+                            settings.save()
                             success_Log( response.text,uuid1, invoice_number)
                         else:
                             error_Log()
@@ -876,8 +878,11 @@ def clearance_API(uuid1,hash_value,signed_xmlfile_name,invoice_number):
                     'Content-Type': 'application/json',
                     'Cookie': 'TS0106293e=0132a679c03c628e6c49de86c0f6bb76390abb4416868d6368d6d7c05da619c8326266f5bc262b7c0c65a6863cd3b19081d64eee99' }
                     response = requests.request("POST", url=get_API_url(base_url="invoices/clearance/single"), headers=headers, data=payload)
+                    frappe.msgprint("Zatca Response status code: " + str(response.status_code))
                     frappe.msgprint(response.text)
                     if response.status_code == 200:
+                            settings.pih = hash_value
+                            settings.save()
                             success_Log(response.text,uuid1, invoice_number)
                     else:
                             error_Log()
@@ -911,7 +916,6 @@ def zatca_Call(invoice_number):
                             # validate_invoice(signed_xmlfile_name,path_string)
                             # frappe.msgprint("validated and stopped it here")
                             # result,clearance_status=send_invoice_for_clearance_normal(uuid1,signed_xmlfile_name,hash_value)
-                            # frappe.msgprint(customer_doc.custom_b2c)
                             if customer_doc.custom_b2c == 1:
                                 reporting_API(uuid1, hash_value, signed_xmlfile_name,invoice_number)
                             else:
