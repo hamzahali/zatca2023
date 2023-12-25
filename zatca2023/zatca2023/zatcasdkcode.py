@@ -898,7 +898,7 @@ def zatca_Call(invoice_number):
                                 clearance_API(uuid1, hash_value, signed_xmlfile_name)
                             # current_time =now()
                             # if clearance_status == "CLEARED":
-                            #     frappe.get_doc({"doctype":"Zatca Success log","title":"Zatca invoice call done successfully","message":"This message by Zatca Compliance ","custom_uuid":uuid1,"invoice_number": invoice_number,"time":current_time,"zatca_response":result}).insert()    
+                            #     frappe.get_doc({"doctype":"Zatca Success log","title":"Zatca invoice call done successfully","message":"This message by Zatca Compliance ","uuid":uuid1,"invoice_number": invoice_number,"time":current_time,"zatca_response":result}).insert()    
                             # else:
                             #     frappe.log_error(title='Zatca invoice call failed in clearance status',message=frappe.get_traceback())
                             # return (json.dumps(result))
