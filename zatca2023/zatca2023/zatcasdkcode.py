@@ -336,7 +336,7 @@ def customer_Data(invoice,sales_invoice_doc):
                 if int(frappe.__version__.split('.')[0]) == 15:
                     address = frappe.get_doc("Address", customer_doc.customer_primary_address)    
                 else:
-                    address = frappe.get_doc("Address", customer_doc.company_address)
+                    address = frappe.get_doc("Address", sales_invoice_doc.company_address)
                 cac_PostalAddress_1 = ET.SubElement(cac_Party_2, "cac:PostalAddress")
                 cbc_StreetName_1 = ET.SubElement(cac_PostalAddress_1, "cbc:StreetName")
                 cbc_StreetName_1.text = address.address_line1
