@@ -276,16 +276,18 @@ def additional_Reference(invoice):
 def company_Data(invoice,sales_invoice_doc):
             try:
                 company_doc = frappe.get_doc("Company", sales_invoice_doc.company)
+                customer_doc= frappe.get_doc("Customer",sales_invoice_doc.customer)
                 cac_AccountingSupplierParty = ET.SubElement(invoice, "cac:AccountingSupplierParty")
                 cac_Party_1 = ET.SubElement(cac_AccountingSupplierParty, "cac:Party")
                 cac_PartyIdentification = ET.SubElement(cac_Party_1, "cac:PartyIdentification")
                 cbc_ID_2 = ET.SubElement(cac_PartyIdentification, "cbc:ID")
                 cbc_ID_2.set("schemeID", "CRN")
-                cbc_ID_2.text ="1234567890"
+                cbc_ID_2.text =customer_doc.tax_id
+
                 cac_PostalAddress = ET.SubElement(cac_Party_1, "cac:PostalAddress")
                 cbc_StreetName = ET.SubElement(cac_PostalAddress, "cbc:StreetName")
                 # cbc_StreetName.text = company_doc.custom_street
-                cbc_StreetName.text = "comp street"
+                cbc_StreetName.text ="3117 Al Qusur Dist."
                 cbc_BuildingNumber = ET.SubElement(cac_PostalAddress, "cbc:BuildingNumber")
                 # cbc_BuildingNumber.text = str(company_doc.custom_build_no)
                 cbc_BuildingNumber.text = "1235"
@@ -331,8 +333,7 @@ def customer_Data(invoice,sales_invoice_doc):
                 cac_PartyIdentification_1 = ET.SubElement(cac_Party_2, "cac:PartyIdentification")
                 cbc_ID_4 = ET.SubElement(cac_PartyIdentification_1, "cbc:ID")
                 cbc_ID_4.set("schemeID", "SAG")
-                # cbc_ID_4.text = customer_doc.custom_accounting_customer_id
-                cbc_ID_4.text ="543261789"
+                cbc_ID_4.text =customer_doc.tax_id
                 if int(frappe.__version__.split('.')[0]) == 15:
                     address = frappe.get_doc("Address", customer_doc.customer_primary_address)    
                 else:
@@ -484,7 +485,7 @@ def item_data(invoice,sales_invoice_doc):
                     cac_Price = ET.SubElement(cac_InvoiceLine, "cac:Price")
                     cbc_PriceAmount = ET.SubElement(cac_Price, "cbc:PriceAmount")
                     cbc_PriceAmount.set("currencyID", sales_invoice_doc.currency)
-                    cbc_PriceAmount.text =  str(single_item.price_list_rate)
+                    cbc_PriceAmount.text =  str(single_item.base_rate)
                 return invoice
             except Exception as e:
                     frappe.throw("error occured in item data"+ str(e) )
