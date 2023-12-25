@@ -208,7 +208,7 @@ def invoice_Typecode_Simplified(invoice,sales_invoice_doc):
                     cbc_InvoiceTypeCode.set("name", "0200000")
                     cbc_InvoiceTypeCode.text = "388"
                 elif sales_invoice_doc.is_return == 1:       # return items and simplified invoice
-                    cbc_InvoiceTypeCode.set("name", "0200000")
+                    cbc_InvoiceTypeCode.set("name", "0211000")
                     cbc_InvoiceTypeCode.text = "381"
                 return invoice
             except Exception as e:
@@ -556,7 +556,12 @@ def generate_csr():
                 generated_csr_file = 'sdkcsr.pem'
                 SDK_ROOT=settings.sdk_root
                 path_string=f"export SDK_ROOT={SDK_ROOT} && export FATOORA_HOME=$SDK_ROOT/Apps && export SDK_CONFIG=$SDK_ROOT/Configuration/config.json && export PATH=$PATH:$FATOORA_HOME &&  "
-                command_generate_csr =  path_string  + f'fatoora -csr -csrConfig {csr_config_file} -privateKey {private_key_file} -generatedCsr {generated_csr_file} -pem'
+                
+                if settings.select == "Simulation":
+                    command_generate_csr =  path_string  + f'fatoora -sim -csr -csrConfig {csr_config_file} -privateKey {private_key_file} -generatedCsr {generated_csr_file} -pem'
+                else:
+                    command_generate_csr =  path_string  + f'fatoora -csr -csrConfig {csr_config_file} -privateKey {private_key_file} -generatedCsr {generated_csr_file} -pem'
+                
                 try:
                     err,out = _execute_in_shell(command_generate_csr)
                     frappe.msgprint(out)
@@ -710,8 +715,13 @@ def validate_invoice(signed_xmlfile_name,path_string):
                         global_result = pattern_global_result.group(1) if pattern_global_result else None
                         global_validation_result = 'PASSED' if global_result == 'PASSED' else 'FAILED'
                         if global_validation_result == 'FAILED':
+                            
                             frappe.msgprint(out)
+                            frappe.msgprint(err)
+                            frappe.msgprint("Validation has been failed")
                         else:
+                            frappe.msgprint(out)
+                            frappe.msgprint(err)
                             frappe.msgprint("Validation has been done Successfully")
                 except Exception as e:
                             frappe.throw(f"An error occurred: {str(e)}")  
@@ -754,12 +764,13 @@ def send_invoice_for_clearance_normal(uuid1, signed_xmlfile_name, hash_value):
                     try:
                         response = requests.request("POST", url=get_API_url(base_url="compliance/invoices"), headers=headers, data=payload)
                         # frappe.msgprint(response.text)
+                        frappe.msgprint(response.text)
                         return response.text, get_Clearance_Status(response)
                     except Exception as e:
                         frappe.msgprint(str(e))
                         return "error", "NOT_CLEARED"
                 except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.ms(str(e) )
 
 @frappe.whitelist(allow_guest=True)                   
 def production_CSID():
@@ -780,8 +791,8 @@ def production_CSID():
                     'Content-Type': 'application/json' }
                     
                     response = requests.request("POST", url=get_API_url(base_url="production/csids"), headers=headers, data=payload)
-                    # frappe.msgprint(response.text)
-                    frappe.throw(response.text)
+                    if response.status_code != 200:
+                        frappe.throw("Error: " + str(response.text))
                     data=json.loads(response.text)
                     concatenated_value = data["binarySecurityToken"] + ":" + data["secret"]
                     encoded_value = base64.b64encode(concatenated_value.encode()).decode()
@@ -879,17 +890,18 @@ def zatca_Call(invoice_number):
                             generate_qr_code(signed_xmlfile_name,sales_invoice_doc,path_string)
                             hash_value =generate_hash(signed_xmlfile_name,path_string)
                             validate_invoice(signed_xmlfile_name,path_string)
-                            result,clearance_status=send_invoice_for_clearance_normal(uuid1,signed_xmlfile_name,hash_value)
+                            # frappe.msgprint("validated and stopped it here")
+                            # result,clearance_status=send_invoice_for_clearance_normal(uuid1,signed_xmlfile_name,hash_value)
                             if customer_doc.customer_type == "B2C":
                                 reporting_API(uuid1, hash_value, signed_xmlfile_name)
                             else:
                                 clearance_API(uuid1, hash_value, signed_xmlfile_name)
-                            current_time =now()
-                            if clearance_status == "CLEARED":
-                                frappe.get_doc({"doctype":"Zatca Success log","title":"Zatca invoice call done successfully","message":"This message by Zatca Compliance ","custom_uuid":uuid1,"invoice_number": invoice_number,"time":current_time,"zatca_response":result}).insert()    
-                            else:
-                                frappe.log_error(title='Zatca invoice call failed in clearance status',message=frappe.get_traceback())
-                            return (json.dumps(result))
+                            # current_time =now()
+                            # if clearance_status == "CLEARED":
+                            #     frappe.get_doc({"doctype":"Zatca Success log","title":"Zatca invoice call done successfully","message":"This message by Zatca Compliance ","custom_uuid":uuid1,"invoice_number": invoice_number,"time":current_time,"zatca_response":result}).insert()    
+                            # else:
+                            #     frappe.log_error(title='Zatca invoice call failed in clearance status',message=frappe.get_traceback())
+                            # return (json.dumps(result))
                     except:       
                             frappe.log_error(title='Zatca invoice call failed', message=frappe.get_traceback())
                 
