@@ -79,7 +79,7 @@ def get_Tax_for_Item(full_string,item):
                 tax_amount = data.get(item, [0, 0])[1]
                 return tax_amount,tax_percentage
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error occured in tax for item"+ str(e) )
 
 def get_ICV_code(invoice_number):
                 try:
@@ -281,8 +281,11 @@ def company_Data(invoice,sales_invoice_doc):
                 cac_PartyIdentification = ET.SubElement(cac_Party_1, "cac:PartyIdentification")
                 cbc_ID_2 = ET.SubElement(cac_PartyIdentification, "cbc:ID")
                 cbc_ID_2.set("schemeID", "CRN")
-                # cbc_ID_2.text =company_doc.custom_accounting_supplier_party_id
-                cbc_ID_2.text ="1234567890"
+                try:
+                    cbc_ID_2.text =company_doc.custom_accounting_supplier_party_id
+                # cbc_ID_2.text ="1234567890"
+                except Exception as e:
+                    frappe.throw("error occured in company supplier id "+ str(e) )
                 cac_PostalAddress = ET.SubElement(cac_Party_1, "cac:PostalAddress")
                 cbc_StreetName = ET.SubElement(cac_PostalAddress, "cbc:StreetName")
                 # cbc_StreetName.text = company_doc.custom_street

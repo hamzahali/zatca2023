@@ -10,7 +10,8 @@
   "title",
   "message",
   "invoice_number",
-  "time"
+  "time",
+  "uuid"
  ],
  "fields": [
   {
@@ -22,7 +23,7 @@
   },
   {
    "fieldname": "message",
-   "fieldtype": "Data",
+   "fieldtype": "Long Text",
    "label": "Message"
   },
   {
@@ -34,11 +35,16 @@
    "fieldname": "time",
    "fieldtype": "Data",
    "label": "Time"
+  },
+  {
+   "fieldname": "uuid",
+   "fieldtype": "Long Text",
+   "label": "UUID"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-12-25 10:28:20.320755",
+ "modified": "2023-12-25 10:46:28.709237",
  "modified_by": "Administrator",
  "module": "Zatca2023",
  "name": "Zatca Success log",
