@@ -86,7 +86,7 @@ def get_ICV_code(invoice_number):
                     icv_code =  re.sub(r'\D', '', invoice_number)   # taking the number part only from doc name
                     return icv_code
                 except Exception as e:
-                    frappe.throw("error in getting icv number",str(e) )
+                    frappe.throw("error in getting icv number"+ str(e) )
                     
 def  get_Issue_Time(invoice_number): 
                 doc = frappe.get_doc("Sales Invoice", invoice_number)
@@ -181,7 +181,7 @@ def xml_tags():
                 X509SerialNumber.text = "2475382886904809774818644480820936050208702411"
                 return invoice
             except Exception as e:
-                    frappe.throw("error in xml tags formation",str(e) )
+                    frappe.throw("error in xml tags formation"+ str(e) )
 
 def salesinvoice_data(invoice,invoice_number):
             try:
@@ -199,7 +199,7 @@ def salesinvoice_data(invoice,invoice_number):
                 cbc_IssueTime.text = get_Issue_Time(invoice_number)
                 return invoice ,uuid1 ,sales_invoice_doc
             except Exception as e:
-                    frappe.throw("error occured in salesinvoice data",str(e) )
+                    frappe.throw("error occured in salesinvoice data"+ str(e) )
 
 def invoice_Typecode_Simplified(invoice,sales_invoice_doc):
             try:                             
@@ -212,7 +212,7 @@ def invoice_Typecode_Simplified(invoice,sales_invoice_doc):
                     cbc_InvoiceTypeCode.text = "381"
                 return invoice
             except Exception as e:
-                    frappe.throw("error occured in simplified invoice typecode",str(e) )
+                    frappe.throw("error occured in simplified invoice typecode"+ str(e) )
 
 def invoice_Typecode_Standard(invoice,sales_invoice_doc):
             try:
@@ -224,7 +224,7 @@ def invoice_Typecode_Standard(invoice,sales_invoice_doc):
                         cbc_InvoiceTypeCode.text = "381"
                     return invoice
             except Exception as e:
-                    frappe.throw("Error in standard invoice type code",str(e))
+                    frappe.throw("Error in standard invoice type code"+ str(e))
                     
 def doc_Reference(invoice,sales_invoice_doc,invoice_number):
             try:
@@ -246,7 +246,7 @@ def doc_Reference(invoice,sales_invoice_doc,invoice_number):
 
 def additional_Reference(invoice):
             try:
-                settings=frappe.get_doc('Zatca setting')
+                # settings=frappe.get_doc('Zatca setting')
                 cac_AdditionalDocumentReference2 = ET.SubElement(invoice, "cac:AdditionalDocumentReference")
                 cbc_ID_1_1 = ET.SubElement(cac_AdditionalDocumentReference2, "cbc:ID")
                 cbc_ID_1_1.text = "PIH"
@@ -271,7 +271,7 @@ def additional_Reference(invoice):
                 cbc_method_sign.text = "urn:oasis:names:specification:ubl:dsig:enveloped:xades"
                 return invoice
             except Exception as e:
-                    frappe.throw("error occured in additional refrences",str(e) )
+                    frappe.throw("error occured in additional refrences" + str(e) )
 
 def company_Data(invoice,sales_invoice_doc):
             try:
@@ -322,7 +322,7 @@ def company_Data(invoice,sales_invoice_doc):
                 # cbc_RegistrationName.text = "ABCD Limited"
                 return invoice
             except Exception as e:
-                    frappe.throw("error occured in company data",str(e) )
+                    frappe.throw("error occured in company data"+ str(e) )
 
 def customer_Data(invoice,sales_invoice_doc):
             try:
@@ -368,7 +368,7 @@ def customer_Data(invoice,sales_invoice_doc):
                 cbc_RegistrationName_1.text = sales_invoice_doc.customer
                 return invoice
             except Exception as e:
-                    frappe.throw("error occured in customer data",str(e) )
+                    frappe.throw("error occured in customer data"+ str(e) )
 
 def delivery_And_PaymentMeans(invoice,sales_invoice_doc, is_return):
             try:
@@ -385,7 +385,7 @@ def delivery_And_PaymentMeans(invoice,sales_invoice_doc, is_return):
                     cbc_InstructionNote.text = "Cancellation"    
                 return invoice
             except Exception as e:
-                    frappe.throw("Delivery and payment means failed",str(e) )
+                    frappe.throw("Delivery and payment means failed"+ str(e) )
                     
 def billing_reference_for_credit_and_debit_note(invoice,sales_invoice_doc):
             frappe.msgprint("credit and debit note")
@@ -398,7 +398,7 @@ def billing_reference_for_credit_and_debit_note(invoice,sales_invoice_doc):
                 
                 return invoice
             except Exception as e:
-                    frappe.throw("credit and debit note billing failed",str(e) )
+                    frappe.throw("credit and debit note billing failed"+ str(e) )
 
 
 def tax_Data(invoice,sales_invoice_doc):
@@ -446,7 +446,7 @@ def tax_Data(invoice,sales_invoice_doc):
                 return invoice
              
             except Exception as e:
-                    frappe.throw("error occured in tax data",str(e) )
+                    frappe.throw("error occured in tax data"+ str(e) )
 
 def item_data(invoice,sales_invoice_doc):
             try:
@@ -488,7 +488,7 @@ def item_data(invoice,sales_invoice_doc):
                     cbc_PriceAmount.text =  str(single_item.price_list_rate)
                 return invoice
             except Exception as e:
-                    frappe.throw("error occured in item data",str(e) )
+                    frappe.throw("error occured in item data"+ str(e) )
 
 def xml_structuring(invoice,sales_invoice_doc):
             try:
@@ -528,7 +528,7 @@ def xml_structuring(invoice,sales_invoice_doc):
                 except Exception as e:
                     frappe.throw(frappe.get_traceback())
             except Exception as e:
-                    frappe.throw("error occured in xml structuring and attach",str(e) )
+                    frappe.throw("error occured in xml structuring and attach"+ str(e) )
 
 def get_latest_generated_csr_file(folder_path='.'):
             try:
@@ -539,7 +539,7 @@ def get_latest_generated_csr_file(folder_path='.'):
                 print(latest_file)
                 return os.path.join(folder_path, latest_file)
             except Exception as e:
-                    frappe.throw(" error in get_latest_generated_csr_file",str(e) )
+                    frappe.throw(" error in get_latest_generated_csr_file"+ str(e) )
 
 
 @frappe.whitelist(allow_guest=True)
@@ -574,7 +574,7 @@ def generate_csr():
                     frappe.throw(err)
                     frappe.throw("An error occurred: " + str(e))
             except Exception as e:
-                    frappe.throw("error occured in generate csr",str(e) )
+                    frappe.throw("error occured in generate csr"+ str(e) )
 
 
 def get_API_url(base_url):
@@ -588,7 +588,7 @@ def get_API_url(base_url):
                         url = settings.production_url + base_url
                     return url 
                 except Exception as e:
-                    frappe.throw(" getting url failed",str(e) ) 
+                    frappe.throw(" getting url failed"+ str(e) ) 
 
 @frappe.whitelist(allow_guest=True)
 def create_CSID(): 
