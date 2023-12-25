@@ -333,36 +333,32 @@ def customer_Data(invoice,sales_invoice_doc):
                 cbc_ID_4 = ET.SubElement(cac_PartyIdentification_1, "cbc:ID")
                 cbc_ID_4.set("schemeID", "SAG")
                 # cbc_ID_4.text = customer_doc.custom_accounting_customer_id
-                
                 cbc_ID_4.text ="543261789"
+                if int(frappe.__version__.split('.')[0]) == 15:
+                    address = frappe.get_doc("Address", customer_doc.customer_primary_address)    
+                else:
+                    address = frappe.get_doc("Address", customer_doc.customer_address)
                 cac_PostalAddress_1 = ET.SubElement(cac_Party_2, "cac:PostalAddress")
                 cbc_StreetName_1 = ET.SubElement(cac_PostalAddress_1, "cbc:StreetName")
-                # cbc_StreetName_1.text = "street"
-                address_string = customer_doc.primary_address
-                address_components = address_string.split('<br>')
-                cbc_StreetName_1.text = address_components[0] 
+                cbc_StreetName_1.text = address.address_line1
                 cbc_BuildingNumber_1 = ET.SubElement(cac_PostalAddress_1, "cbc:BuildingNumber")
-                # cbc_BuildingNumber_1.text = str(customer_doc.custom_building_no)
-                cbc_BuildingNumber_1.text = "1235"
+                cbc_BuildingNumber_1.text = address.address_line2
                 cbc_PlotIdentification_1 = ET.SubElement(cac_PostalAddress_1, "cbc:PlotIdentification")
-                # cbc_PlotIdentification_1.text = customer_doc.custom_plot_id_no
-                cbc_PlotIdentification_1.text = address_components[1] 
+                if hasattr(address, 'po_box'):
+                    cbc_PlotIdentification_1.text = address.po_box
+                else:
+                    cbc_PlotIdentification_1.text = address.address_line1
                 cbc_CitySubdivisionName_1 = ET.SubElement(cac_PostalAddress_1, "cbc:CitySubdivisionName")
-                # cbc_CitySubdivisionName_1.text = customer_doc.custom_sub
-                cbc_CitySubdivisionName_1.text = "my sub"
+                cbc_CitySubdivisionName_1.text = address.address_line2
                 cbc_CityName_1 = ET.SubElement(cac_PostalAddress_1, "cbc:CityName")
-                # cbc_CityName_1.text = customer_doc.custom_city
-                cbc_CityName_1.text = address_components[2] 
+                cbc_CityName_1.text = address.city
                 cbc_PostalZone_1 = ET.SubElement(cac_PostalAddress_1, "cbc:PostalZone")
-                # cbc_PostalZone_1.text = str(customer_doc.custom_pincode)
-                cbc_PostalZone_1.text = address_components[4] 
+                cbc_PostalZone_1.text =address.pincode
                 cbc_CountrySubentity_1 = ET.SubElement(cac_PostalAddress_1, "cbc:CountrySubentity")
-                # cbc_CountrySubentity_1.text = customer_doc.custom_sub
-                cbc_CountrySubentity_1.text = address_components[3] 
+                cbc_CountrySubentity_1.text =address.state
                 cac_Country_1 = ET.SubElement(cac_PostalAddress_1, "cac:Country")
                 cbc_IdentificationCode_1 = ET.SubElement(cac_Country_1, "cbc:IdentificationCode")
-                cbc_IdentificationCode_1.text = "SA" # customer_doc.custom_country
-                # cbc_IdentificationCode_1.text = address_components[5] 
+                cbc_IdentificationCode_1.text = "SA" 
                 cac_PartyTaxScheme_1 = ET.SubElement(cac_Party_2, "cac:PartyTaxScheme")
                 cac_TaxScheme_1 = ET.SubElement(cac_PartyTaxScheme_1, "cac:TaxScheme")
                 cbc_ID_5 = ET.SubElement(cac_TaxScheme_1, "cbc:ID")
