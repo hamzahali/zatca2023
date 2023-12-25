@@ -242,7 +242,7 @@ def doc_Reference(invoice,sales_invoice_doc,invoice_number):
                 cbc_UUID_1.text = str(get_ICV_code(invoice_number))
                 return invoice  
             except Exception as e:
-                    frappe.throw("Error occured in str(e) )
+                    frappe.throw("Error occured in  reference doc" + str(e) )
 
 def additional_Reference(invoice):
             try:
@@ -271,7 +271,7 @@ def additional_Reference(invoice):
                 cbc_method_sign.text = "urn:oasis:names:specification:ubl:dsig:enveloped:xades"
                 return invoice
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error occured in additional refrences",str(e) )
 
 def company_Data(invoice,sales_invoice_doc):
             try:
@@ -322,7 +322,7 @@ def company_Data(invoice,sales_invoice_doc):
                 # cbc_RegistrationName.text = "ABCD Limited"
                 return invoice
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error occured in company data",str(e) )
 
 def customer_Data(invoice,sales_invoice_doc):
             try:
@@ -368,7 +368,7 @@ def customer_Data(invoice,sales_invoice_doc):
                 cbc_RegistrationName_1.text = sales_invoice_doc.customer
                 return invoice
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error occured in customer data",str(e) )
 
 def delivery_And_PaymentMeans(invoice,sales_invoice_doc, is_return):
             try:
@@ -382,11 +382,10 @@ def delivery_And_PaymentMeans(invoice,sales_invoice_doc, is_return):
                 
                 if is_return == 1:
                     cbc_InstructionNote = ET.SubElement(cac_PaymentMeans, "cbc:InstructionNote")
-                    cbc_InstructionNote.text = "Cancellation"
-                
+                    cbc_InstructionNote.text = "Cancellation"    
                 return invoice
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("Delivery and payment means failed",str(e) )
                     
 def billing_reference_for_credit_and_debit_note(invoice,sales_invoice_doc):
             frappe.msgprint("credit and debit note")
@@ -399,7 +398,7 @@ def billing_reference_for_credit_and_debit_note(invoice,sales_invoice_doc):
                 
                 return invoice
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("credit and debit note billing failed",str(e) )
 
 
 def tax_Data(invoice,sales_invoice_doc):
@@ -447,7 +446,7 @@ def tax_Data(invoice,sales_invoice_doc):
                 return invoice
              
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error occured in tax data",str(e) )
 
 def item_data(invoice,sales_invoice_doc):
             try:
@@ -489,7 +488,7 @@ def item_data(invoice,sales_invoice_doc):
                     cbc_PriceAmount.text =  str(single_item.price_list_rate)
                 return invoice
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error occured in item data",str(e) )
 
 def xml_structuring(invoice,sales_invoice_doc):
             try:
@@ -529,7 +528,7 @@ def xml_structuring(invoice,sales_invoice_doc):
                 except Exception as e:
                     frappe.throw(frappe.get_traceback())
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error occured in xml structuring and attach",str(e) )
 
 def get_latest_generated_csr_file(folder_path='.'):
             try:
@@ -540,7 +539,7 @@ def get_latest_generated_csr_file(folder_path='.'):
                 print(latest_file)
                 return os.path.join(folder_path, latest_file)
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw(" error in get_latest_generated_csr_file",str(e) )
 
 
 @frappe.whitelist(allow_guest=True)
@@ -575,7 +574,7 @@ def generate_csr():
                     frappe.throw(err)
                     frappe.throw("An error occurred: " + str(e))
             except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error occured in generate csr",str(e) )
 
 
 def get_API_url(base_url):
@@ -589,7 +588,7 @@ def get_API_url(base_url):
                         url = settings.production_url + base_url
                     return url 
                 except Exception as e:
-                    frappe.throw(str(e) ) 
+                    frappe.throw(" getting url failed",str(e) ) 
 
 @frappe.whitelist(allow_guest=True)
 def create_CSID(): 
@@ -621,7 +620,7 @@ def create_CSID():
                     settings.set("compliance_request_id",data["requestID"])
                     settings.save()
                 except Exception as e:
-                            frappe.throw("error" + str(e))
+                            frappe.throw("error in csid formation" + str(e))
 
 def create_compliance_x509():
                 try:
@@ -629,7 +628,7 @@ def create_compliance_x509():
                     with open(f"cert.pem", 'w') as file:   #attaching X509 certificate
                         file.write(base64.b64decode(binarySecurityToken).decode('utf-8'))
                 except Exception as e:
-                    frappe.throw( str(e) )
+                    frappe.throw( "error in compliance x509" + str(e) )
                     
 
 def sign_invoice():
@@ -662,7 +661,7 @@ def sign_invoice():
                     else:
                         frappe.throw(err,out)
                 except Exception as e:
-                    frappe.throw("An error occurred3 : " + str(e))
+                    frappe.throw("An error occurred sign invoice : " + str(e))
             
 def generate_qr_code(signed_xmlfile_name,sales_invoice_doc,path_string):
                 try:
@@ -685,7 +684,7 @@ def generate_qr_code(signed_xmlfile_name,sales_invoice_doc,path_string):
                     else:
                         frappe.msgprint("QR Code not found in the output.")    
                 except Exception as e:
-                    frappe.throw(f"Error:{e} ")
+                    frappe.throw(f"Errorin generating qr:{e} ")
                     return None
 
            
@@ -701,7 +700,7 @@ def generate_hash(signed_xmlfile_name,path_string):
                     else:
                         frappe.msgprint("Hash value not found in the log entry.")
                 except Exception as e:
-                    frappe.throw(f"Error:{e} ")
+                    frappe.throw(f"Error in generate hash:{e} ")
                         
 def validate_invoice(signed_xmlfile_name,path_string):               
                 try:
@@ -720,7 +719,7 @@ def validate_invoice(signed_xmlfile_name,path_string):
                             frappe.msgprint(err)
                             frappe.msgprint("Validation has been done Successfully")
                 except Exception as e:
-                            frappe.throw(f"An error occurred: {str(e)}")  
+                            frappe.throw(f"An error occurred validate invoice: {str(e)}")  
                
 def get_Clearance_Status(result):
                     try:
@@ -739,7 +738,7 @@ def xml_base64_Decode(signed_xmlfile_name):
                                         base64_decoded = base64_encoded.decode("utf-8")
                                         return base64_decoded
                     except Exception as e:
-                        frappe.throw(str(e) )
+                        frappe.throw("error in xml base64 " + str(e) )
 
 
 def send_invoice_for_clearance_normal(uuid1, signed_xmlfile_name, hash_value):
@@ -766,7 +765,7 @@ def send_invoice_for_clearance_normal(uuid1, signed_xmlfile_name, hash_value):
                         frappe.msgprint(str(e))
                         return "error", "NOT_CLEARED"
                 except Exception as e:
-                    frappe.ms(str(e) )
+                    frappe.throw("error in clearance invoice ,zatca validation" + str(e) )
 
 @frappe.whitelist(allow_guest=True)                   
 def production_CSID():
@@ -797,7 +796,7 @@ def production_CSID():
                     settings.set("basic_auth_production", encoded_value)
                     settings.save()
                 except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error in  production csid formation" + str(e) )
 
 def get_Reporting_Status(result):
                         try:
@@ -839,7 +838,7 @@ def reporting_API(uuid1,hash_value,signed_xmlfile_name):
                         frappe.msgprint ("error","NOT_REPORTED")
                 except Exception as e:
                     frappe.msgprint ("error","NOT-REPORTED")
-                    frappe.throw(str(e) )
+                    frappe.throw("error in reporting api" + str(e) )
                     
 def clearance_API(uuid1,hash_value,signed_xmlfile_name):
                 try:
@@ -859,7 +858,7 @@ def clearance_API(uuid1,hash_value,signed_xmlfile_name):
                     response = requests.request("POST", url=get_API_url(base_url="invoices/clearance/single"), headers=headers, data=payload)
                     frappe.msgprint(response.text)
                 except Exception as e:
-                    frappe.throw(str(e) )
+                    frappe.throw("error in clearance api" + str(e) )
 
 def zatca_Call(invoice_number):
                     try:    
