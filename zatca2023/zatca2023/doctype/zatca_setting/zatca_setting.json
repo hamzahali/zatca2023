@@ -129,7 +129,7 @@
   },
   {
    "fieldname": "basic_auth",
-   "fieldtype": "Data",
+   "fieldtype": "Long Text",
    "label": "Basic Auth from CSID"
   },
   {
@@ -139,7 +139,7 @@
   },
   {
    "fieldname": "basic_auth_production",
-   "fieldtype": "Data",
+   "fieldtype": "Long Text",
    "label": "Basic Auth from production"
   },
   {
@@ -157,7 +157,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-12-22 16:20:00.777798",
+ "modified": "2023-12-25 06:05:10.243839",
  "modified_by": "Administrator",
  "module": "Zatca2023",
  "name": "Zatca setting",
