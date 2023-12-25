@@ -18,7 +18,9 @@
   {
    "fieldname": "title",
    "fieldtype": "Data",
-   "label": "Title"
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
   },
   {
    "fieldname": "message",
@@ -37,18 +39,18 @@
   },
   {
    "fieldname": "zatca_response",
-   "fieldtype": "Data",
+   "fieldtype": "Text",
    "label": "Zatca Response"
   },
   {
    "fieldname": "uuid",
-   "fieldtype": "Data",
+   "fieldtype": "Text",
    "label": "UUID"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-12-25 10:17:02.608960",
+ "modified": "2023-12-25 10:25:40.169791",
  "modified_by": "Administrator",
  "module": "Zatca2023",
  "name": "Zatca Success log",
