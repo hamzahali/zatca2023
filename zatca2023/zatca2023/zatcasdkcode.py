@@ -24,8 +24,10 @@ import sys
 import frappe 
 import requests
 from frappe.utils.data import  get_time
-
 import base64
+import pyqrcode
+from pyqrcode import create as qr_create
+from erpnext import get_region
 
 def clean_up_certificate_string(certificate_string):
     return certificate_string.replace("-----BEGIN CERTIFICATE-----\n", "").replace("-----END CERTIFICATE-----", "").strip()
@@ -236,7 +238,6 @@ def doc_Reference(invoice,sales_invoice_doc,invoice_number):
                                 invoice=billing_reference_for_credit_and_debit_note(invoice,sales_invoice_doc)
                 cac_AdditionalDocumentReference = ET.SubElement(invoice, "cac:AdditionalDocumentReference")
                 cbc_ID_1 = ET.SubElement(cac_AdditionalDocumentReference, "cbc:ID")
-                # cbc_ID_1.text = sales_invoice_doc.custom_document_id
                 cbc_ID_1.text = "ICV"
                 cbc_UUID_1 = ET.SubElement(cac_AdditionalDocumentReference, "cbc:UUID")
                 cbc_UUID_1.text = str(get_ICV_code(invoice_number))
@@ -312,7 +313,6 @@ def company_Data(invoice,sales_invoice_doc):
                 cac_PartyLegalEntity = ET.SubElement(cac_Party_1, "cac:PartyLegalEntity")
                 cbc_RegistrationName = ET.SubElement(cac_PartyLegalEntity, "cbc:RegistrationName")
                 cbc_RegistrationName.text = sales_invoice_doc.company
-                # cbc_RegistrationName.text = "ABCD Limited"
                 return invoice
             except Exception as e:
                     frappe.throw("error occured in company data"+ str(e) )
@@ -326,7 +326,6 @@ def customer_Data(invoice,sales_invoice_doc):
                 cbc_ID_4 = ET.SubElement(cac_PartyIdentification_1, "cbc:ID")
                 cbc_ID_4.set("schemeID", "CRN")
                 cbc_ID_4.text =customer_doc.tax_id
-                # cbc_ID_4.text ="543261789"
                 if int(frappe.__version__.split('.')[0]) == 15:
                     address = frappe.get_doc("Address", customer_doc.customer_primary_address)    
                 else:
@@ -370,7 +369,6 @@ def delivery_And_PaymentMeans(invoice,sales_invoice_doc, is_return):
                 cbc_ActualDeliveryDate.text = str(sales_invoice_doc.due_date)
                 cac_PaymentMeans = ET.SubElement(invoice, "cac:PaymentMeans")
                 cbc_PaymentMeansCode = ET.SubElement(cac_PaymentMeans, "cbc:PaymentMeansCode")
-                # cbc_PaymentMeansCode.text = str(sales_invoice_doc.custom_payment_code)
                 cbc_PaymentMeansCode.text = "32"
                 
                 if is_return == 1:
@@ -465,12 +463,9 @@ def item_data(invoice,sales_invoice_doc):
                     cbc_Name.text = single_item.item_code
                     cac_ClassifiedTaxCategory = ET.SubElement(cac_Item, "cac:ClassifiedTaxCategory")
                     cbc_ID_11 = ET.SubElement(cac_ClassifiedTaxCategory, "cbc:ID")
-                    # cbc_ID_11.text = sales_invoice_doc.custom_item_character
                     cbc_ID_11.text = "S"
                     cbc_Percent_2 = ET.SubElement(cac_ClassifiedTaxCategory, "cbc:Percent")
-                    # cbc_Percent_2.text =str(item_tax_percentage)
                     cbc_Percent_2.text = f"{float(item_tax_percentage):.2f}"
-                    # frappe.throw(cbc_Percent_2.text)
                     cac_TaxScheme_4 = ET.SubElement(cac_ClassifiedTaxCategory, "cac:TaxScheme")
                     cbc_ID_12 = ET.SubElement(cac_TaxScheme_4, "cbc:ID")
                     cbc_ID_12.text = "VAT"
@@ -792,110 +787,153 @@ def production_CSID():
                     frappe.throw("error in  production csid formation" + str(e) )
 
 def get_Reporting_Status(result):
-                        try:
-                            json_data = json.loads(result.text)
-                            reporting_status = json_data.get("reportingStatus")
-                            print("reportingStatus: " + reporting_status)
-                            return reporting_status
-                        except Exception as e:
-                            print(e) 
+                    try:
+                        json_data = json.loads(result.text)
+                        reporting_status = json_data.get("reportingStatus")
+                        print("reportingStatus: " + reporting_status)
+                        return reporting_status
+                    except Exception as e:
+                        print(e) 
 
 def success_Log(response,uuid1,invoice_number):
-        try:
-            current_time = frappe.utils.now()
-            frappe.get_doc({
-                "doctype": "Zatca Success log",
-                "title": "Zatca invoice call done successfully",
-                "message": "This message by Zatca Compliance",
-                "uuid": uuid1,
-                "invoice_number": invoice_number,
-                "time": current_time,
-                "zatca_response": response
-            }).insert()
-        except Exception as e:
-            frappe.throw("Error in success log  " + str(e))
+                    try:
+                        current_time = frappe.utils.now()
+                        frappe.get_doc({
+                            "doctype": "Zatca Success log",
+                            "title": "Zatca invoice call done successfully",
+                            "message": "This message by Zatca Compliance",
+                            "uuid": uuid1,
+                            "invoice_number": invoice_number,
+                            "time": current_time,
+                            "zatca_response": response
+                        }).insert()
+                    except Exception as e:
+                        frappe.throw("Error in success log  " + str(e))
 
 def error_Log():
-        try:
-              frappe.log_error(title='Zatca invoice call failed in clearance status',message=frappe.get_traceback())
-        except Exception as e:
-            frappe.throw("Error in error log  " + str(e))     
+                    try:
+                        frappe.log_error(title='Zatca invoice call failed in clearance status',message=frappe.get_traceback())
+                    except Exception as e:
+                        frappe.throw("Error in error log  " + str(e))     
 
 def reporting_API(uuid1,hash_value,signed_xmlfile_name,invoice_number):
                 # frappe.msgprint(xml_base64_Decode(signed_xmlfile_name))
-                try:
-                    settings = frappe.get_doc('Zatca setting')
-                    payload = json.dumps({
-                    "invoiceHash": hash_value,
-                    "uuid": uuid1,
-                    "invoice": xml_base64_Decode(signed_xmlfile_name),
-                    })
-                    headers = {
-                    'accept': 'application/json',
-                    'accept-language': 'en',
-                    'Clearance-Status': '0',
-                    'Accept-Version': 'V2',
-                    # 'Authorization': "Basic VFVsSlJESjZRME5CTkVOblFYZEpRa0ZuU1ZSaWQwRkJaSEZFYlVsb2NYTnFjRzAxUTNkQlFrRkJRakp2UkVGTFFtZG5jV2hyYWs5UVVWRkVRV3BDYWsxU1ZYZEZkMWxMUTFwSmJXbGFVSGxNUjFGQ1IxSlpSbUpIT1dwWlYzZDRSWHBCVWtKbmIwcHJhV0ZLYXk5SmMxcEJSVnBHWjA1dVlqTlplRVo2UVZaQ1oyOUthMmxoU21zdlNYTmFRVVZhUm1ka2JHVklVbTVaV0hBd1RWSjNkMGRuV1VSV1VWRkVSWGhPVlZVeGNFWlRWVFZYVkRCc1JGSlRNVlJrVjBwRVVWTXdlRTFDTkZoRVZFbDVUVVJOZVU5RVJURk9SRmw2VFd4dldFUlVTWGxOUkUxNlRVUkZNVTVFV1hwTmJHOTNWRlJGVEUxQmEwZEJNVlZGUW1oTlExVXdSWGhFYWtGTlFtZE9Wa0pCYjFSQ1ZYQm9ZMjFzZVUxU2IzZEhRVmxFVmxGUlRFVjRSa3RhVjFKcldWZG5aMUZ1U21oaWJVNXZUVlJKZWs1RVJWTk5Ra0ZIUVRGVlJVRjRUVXBOVkVrelRHcEJkVTFETkhoTlJsbDNSVUZaU0V0dldrbDZhakJEUVZGWlJrczBSVVZCUVc5RVVXZEJSVVF2ZDJJeWJHaENka0pKUXpoRGJtNWFkbTkxYnpaUGVsSjViWGx0VlRsT1YxSm9TWGxoVFdoSFVrVkNRMFZhUWpSRlFWWnlRblZXTW5oWWFYaFpOSEZDV1dZNVpHUmxjbnByVnpsRWQyUnZNMGxzU0dkeFQwTkJhVzkzWjJkSmJVMUpSMHhDWjA1V1NGSkZSV2RaVFhkbldVTnJabXBDT0UxU2QzZEhaMWxFVmxGUlJVUkNUWGxOYWtsNVRXcE5lVTVFVVRCTmVsRjZZVzFhYlU1RVRYbE5VamgzU0ZGWlMwTmFTVzFwV2xCNVRFZFJRa0ZSZDFCTmVrVjNUVlJqTVUxNmF6Tk9SRUYzVFVSQmVrMVJNSGREZDFsRVZsRlJUVVJCVVhoTlJFVjRUVkpGZDBSM1dVUldVVkZoUkVGb1ZGbFhNWGRpUjFWblVsUkZXazFDWTBkQk1WVkZSSGQzVVZVeVJuUmpSM2hzU1VWS01XTXpUbkJpYlZaNlkzcEJaRUpuVGxaSVVUUkZSbWRSVldoWFkzTmlZa3BvYWtRMVdsZFBhM2RDU1V4REszZE9WbVpMV1hkSWQxbEVWbEl3YWtKQ1ozZEdiMEZWWkcxRFRTdDNZV2R5UjJSWVRsb3pVRzF4ZVc1TE5Xc3hkRk00ZDFSbldVUldVakJtUWtWamQxSlVRa1J2UlVkblVEUlpPV0ZJVWpCalJHOTJURE5TZW1SSFRubGlRelUyV1ZoU2FsbFROVzVpTTFsMVl6SkZkbEV5Vm5sa1JWWjFZMjA1YzJKRE9WVlZNWEJHVTFVMVYxUXdiRVJTVXpGVVpGZEtSRkZUTUhoTWJVNTVZa1JEUW5KUldVbExkMWxDUWxGVlNFRlJSVVZuWVVGM1oxb3dkMkpuV1VsTGQxbENRbEZWU0UxQlIwZFpiV2d3WkVoQk5reDVPVEJqTTFKcVkyMTNkV1Z0UmpCWk1rVjFXakk1TWt4dVRtaE1NRTVzWTI1U1JtSnVTblppUjNkMlZrWk9ZVkpYYkhWa2JUbHdXVEpXVkZFd1JYaE1iVlkwWkVka2FHVnVVWFZhTWpreVRHMTRkbGt5Um5OWU1WSlVWMnRXU2xSc1dsQlRWVTVHVEZaT01WbHJUa0pNVkVWdlRWTnJkVmt6U2pCTlEzTkhRME56UjBGUlZVWkNla0ZDYUdnNWIyUklVbmRQYVRoMlpFaE9NRmt6U25OTWJuQm9aRWRPYUV4dFpIWmthVFY2V1ZNNWRsa3pUbmROUVRSSFFURlZaRVIzUlVJdmQxRkZRWGRKU0dkRVFXUkNaMDVXU0ZOVlJVWnFRVlZDWjJkeVFtZEZSa0pSWTBSQloxbEpTM2RaUWtKUlZVaEJkMDEzU25kWlNrdDNXVUpDUVVkRFRuaFZTMEpDYjNkSFJFRkxRbWRuY2tKblJVWkNVV05FUVdwQlMwSm5aM0pDWjBWR1FsRmpSRUY2UVV0Q1oyZHhhR3RxVDFCUlVVUkJaMDVLUVVSQ1IwRnBSVUY1VG1oNVkxRXpZazVzVEVaa1QxQnNjVmxVTmxKV1VWUlhaMjVMTVVkb01FNUlaR05UV1RSUVprTXdRMGxSUTFOQmRHaFlkblkzZEdWMFZVdzJPVmRxY0RoQ2VHNU1URTEzWlhKNFdtaENibVYzYnk5blJqTkZTa0U5UFE9PTpmOVlSaG9wTi9HN3gwVEVDT1k2bktTQ0hMTllsYjVyaUFIU0ZQSUNvNHF3PQ==" ,
-                    # 'Authorization': "Basic VFVsSlJESjZRME5CTkVOblFYZEpRa0ZuU1ZSaWQwRkJaSEZFYlVsb2NYTnFjRzAxUTNkQlFrRkJRakp2UkVGTFFtZG5jV2hyYWs5UVVWRkVRV3BDYWsxU1ZYZEZkMWxMUTFwSmJXbGFVSGxNUjFGQ1IxSlpSbUpIT1dwWlYzZDRSWHBCVWtKbmIwcHJhV0ZLYXk5SmMxcEJSVnBHWjA1dVlqTlplRVo2UVZaQ1oyOUthMmxoU21zdlNYTmFRVVZhUm1ka2JHVklVbTVaV0hBd1RWSjNkMGRuV1VSV1VWRkVSWGhPVlZVeGNFWlRWVFZYVkRCc1JGSlRNVlJrVjBwRVVWTXdlRTFDTkZoRVZFbDVUVVJOZVU5RVJURk9SRmw2VFd4dldFUlVTWGxOUkUxNlRVUkZNVTVFV1hwTmJHOTNWRlJGVEUxQmEwZEJNVlZGUW1oTlExVXdSWGhFYWtGTlFtZE9Wa0pCYjFSQ1ZYQm9ZMjFzZVUxU2IzZEhRVmxFVmxGUlRFVjRSa3RhVjFKcldWZG5aMUZ1U21oaWJVNXZUVlJKZWs1RVJWTk5Ra0ZIUVRGVlJVRjRUVXBOVkVrelRHcEJkVTFETkhoTlJsbDNSVUZaU0V0dldrbDZhakJEUVZGWlJrczBSVVZCUVc5RVVXZEJSVVF2ZDJJeWJHaENka0pKUXpoRGJtNWFkbTkxYnpaUGVsSjViWGx0VlRsT1YxSm9TWGxoVFdoSFVrVkNRMFZhUWpSRlFWWnlRblZXTW5oWWFYaFpOSEZDV1dZNVpHUmxjbnByVnpsRWQyUnZNMGxzU0dkeFQwTkJhVzkzWjJkSmJVMUpSMHhDWjA1V1NGSkZSV2RaVFhkbldVTnJabXBDT0UxU2QzZEhaMWxFVmxGUlJVUkNUWGxOYWtsNVRXcE5lVTVFVVRCTmVsRjZZVzFhYlU1RVRYbE5VamgzU0ZGWlMwTmFTVzFwV2xCNVRFZFJRa0ZSZDFCTmVrVjNUVlJqTVUxNmF6Tk9SRUYzVFVSQmVrMVJNSGREZDFsRVZsRlJUVVJCVVhoTlJFVjRUVkpGZDBSM1dVUldVVkZoUkVGb1ZGbFhNWGRpUjFWblVsUkZXazFDWTBkQk1WVkZSSGQzVVZVeVJuUmpSM2hzU1VWS01XTXpUbkJpYlZaNlkzcEJaRUpuVGxaSVVUUkZSbWRSVldoWFkzTmlZa3BvYWtRMVdsZFBhM2RDU1V4REszZE9WbVpMV1hkSWQxbEVWbEl3YWtKQ1ozZEdiMEZWWkcxRFRTdDNZV2R5UjJSWVRsb3pVRzF4ZVc1TE5Xc3hkRk00ZDFSbldVUldVakJtUWtWamQxSlVRa1J2UlVkblVEUlpPV0ZJVWpCalJHOTJURE5TZW1SSFRubGlRelUyV1ZoU2FsbFROVzVpTTFsMVl6SkZkbEV5Vm5sa1JWWjFZMjA1YzJKRE9WVlZNWEJHVTFVMVYxUXdiRVJTVXpGVVpGZEtSRkZUTUhoTWJVNTVZa1JEUW5KUldVbExkMWxDUWxGVlNFRlJSVVZuWVVGM1oxb3dkMkpuV1VsTGQxbENRbEZWU0UxQlIwZFpiV2d3WkVoQk5reDVPVEJqTTFKcVkyMTNkV1Z0UmpCWk1rVjFXakk1TWt4dVRtaE1NRTVzWTI1U1JtSnVTblppUjNkMlZrWk9ZVkpYYkhWa2JUbHdXVEpXVkZFd1JYaE1iVlkwWkVka2FHVnVVWFZhTWpreVRHMTRkbGt5Um5OWU1WSlVWMnRXU2xSc1dsQlRWVTVHVEZaT01WbHJUa0pNVkVWdlRWTnJkVmt6U2pCTlEzTkhRME56UjBGUlZVWkNla0ZDYUdnNWIyUklVbmRQYVRoMlpFaE9NRmt6U25OTWJuQm9aRWRPYUV4dFpIWmthVFY2V1ZNNWRsa3pUbmROUVRSSFFURlZaRVIzUlVJdmQxRkZRWGRKU0dkRVFXUkNaMDVXU0ZOVlJVWnFRVlZDWjJkeVFtZEZSa0pSWTBSQloxbEpTM2RaUWtKUlZVaEJkMDEzU25kWlNrdDNXVUpDUVVkRFRuaFZTMEpDYjNkSFJFRkxRbWRuY2tKblJVWkNVV05FUVdwQlMwSm5aM0pDWjBWR1FsRmpSRUY2UVV0Q1oyZHhhR3RxVDFCUlVVUkJaMDVLUVVSQ1IwRnBSVUY1VG1oNVkxRXpZazVzVEVaa1QxQnNjVmxVTmxKV1VWUlhaMjVMTVVkb01FNUlaR05UV1RSUVprTXdRMGxSUTFOQmRHaFlkblkzZEdWMFZVdzJPVmRxY0RoQ2VHNU1URTEzWlhKNFdtaENibVYzYnk5blJqTkZTa0U5UFE9PTpmOVlSaG9wTi9HN3gwVEVDT1k2bktTQ0hMTllsYjVyaUFIU0ZQSUNvNHF3PQ==",
-                    # 'Authorization': 'Basic' + settings.basic_auth_production,
-                    'Authorization': 'Basic' + settings.basic_auth_production,
-                    'Content-Type': 'application/json',
-                    'Cookie': 'TS0106293e=0132a679c0639d13d069bcba831384623a2ca6da47fac8d91bef610c47c7119dcdd3b817f963ec301682dae864351c67ee3a402866'
-                    }
                     try:
-                        response = requests.request("POST", url=get_API_url(base_url="invoices/reporting/single"), headers=headers, data=payload)
-                        # response = requests.request("POST", url="https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal/invoices/reporting/single", headers=headers, data=payload)
-                        frappe.msgprint("Zatca Response status code: " + str(response.status_code))
-                        frappe.msgprint("Reporting API response: " + response.text)
-                        if response.status_code == 200:
-                            settings.pih = hash_value
-                            settings.save()
-                            sales_invoce = frappe.get_doc('Sales Invoice',invoice_number)
-                            sales_invoce.custom_uuid = uuid1
-                            sales_invoce.custom_zatca_status = "REPORTED"
-                            sales_invoce.save()
-                            success_Log( response.text,uuid1, invoice_number)
-                        else:
-                            error_Log()
-                        
-                    except Exception as e:    
-                        frappe.msgprint(str(e)) 
-                        frappe.msgprint ("error","NOT_REPORTED")
-                except Exception as e:
-                    frappe.msgprint ("error","NOT-REPORTED")
-                    frappe.throw("error in reporting api" + str(e) )
+                        settings = frappe.get_doc('Zatca setting')
+                        payload = json.dumps({
+                        "invoiceHash": hash_value,
+                        "uuid": uuid1,
+                        "invoice": xml_base64_Decode(signed_xmlfile_name),
+                        })
+                        headers = {
+                        'accept': 'application/json',
+                        'accept-language': 'en',
+                        'Clearance-Status': '0',
+                        'Accept-Version': 'V2',
+                        # 'Authorization': "Basic VFVsSlJESjZRME5CTkVOblFYZEpRa0ZuU1ZSaWQwRkJaSEZFYlVsb2NYTnFjRzAxUTNkQlFrRkJRakp2UkVGTFFtZG5jV2hyYWs5UVVWRkVRV3BDYWsxU1ZYZEZkMWxMUTFwSmJXbGFVSGxNUjFGQ1IxSlpSbUpIT1dwWlYzZDRSWHBCVWtKbmIwcHJhV0ZLYXk5SmMxcEJSVnBHWjA1dVlqTlplRVo2UVZaQ1oyOUthMmxoU21zdlNYTmFRVVZhUm1ka2JHVklVbTVaV0hBd1RWSjNkMGRuV1VSV1VWRkVSWGhPVlZVeGNFWlRWVFZYVkRCc1JGSlRNVlJrVjBwRVVWTXdlRTFDTkZoRVZFbDVUVVJOZVU5RVJURk9SRmw2VFd4dldFUlVTWGxOUkUxNlRVUkZNVTVFV1hwTmJHOTNWRlJGVEUxQmEwZEJNVlZGUW1oTlExVXdSWGhFYWtGTlFtZE9Wa0pCYjFSQ1ZYQm9ZMjFzZVUxU2IzZEhRVmxFVmxGUlRFVjRSa3RhVjFKcldWZG5aMUZ1U21oaWJVNXZUVlJKZWs1RVJWTk5Ra0ZIUVRGVlJVRjRUVXBOVkVrelRHcEJkVTFETkhoTlJsbDNSVUZaU0V0dldrbDZhakJEUVZGWlJrczBSVVZCUVc5RVVXZEJSVVF2ZDJJeWJHaENka0pKUXpoRGJtNWFkbTkxYnpaUGVsSjViWGx0VlRsT1YxSm9TWGxoVFdoSFVrVkNRMFZhUWpSRlFWWnlRblZXTW5oWWFYaFpOSEZDV1dZNVpHUmxjbnByVnpsRWQyUnZNMGxzU0dkeFQwTkJhVzkzWjJkSmJVMUpSMHhDWjA1V1NGSkZSV2RaVFhkbldVTnJabXBDT0UxU2QzZEhaMWxFVmxGUlJVUkNUWGxOYWtsNVRXcE5lVTVFVVRCTmVsRjZZVzFhYlU1RVRYbE5VamgzU0ZGWlMwTmFTVzFwV2xCNVRFZFJRa0ZSZDFCTmVrVjNUVlJqTVUxNmF6Tk9SRUYzVFVSQmVrMVJNSGREZDFsRVZsRlJUVVJCVVhoTlJFVjRUVkpGZDBSM1dVUldVVkZoUkVGb1ZGbFhNWGRpUjFWblVsUkZXazFDWTBkQk1WVkZSSGQzVVZVeVJuUmpSM2hzU1VWS01XTXpUbkJpYlZaNlkzcEJaRUpuVGxaSVVUUkZSbWRSVldoWFkzTmlZa3BvYWtRMVdsZFBhM2RDU1V4REszZE9WbVpMV1hkSWQxbEVWbEl3YWtKQ1ozZEdiMEZWWkcxRFRTdDNZV2R5UjJSWVRsb3pVRzF4ZVc1TE5Xc3hkRk00ZDFSbldVUldVakJtUWtWamQxSlVRa1J2UlVkblVEUlpPV0ZJVWpCalJHOTJURE5TZW1SSFRubGlRelUyV1ZoU2FsbFROVzVpTTFsMVl6SkZkbEV5Vm5sa1JWWjFZMjA1YzJKRE9WVlZNWEJHVTFVMVYxUXdiRVJTVXpGVVpGZEtSRkZUTUhoTWJVNTVZa1JEUW5KUldVbExkMWxDUWxGVlNFRlJSVVZuWVVGM1oxb3dkMkpuV1VsTGQxbENRbEZWU0UxQlIwZFpiV2d3WkVoQk5reDVPVEJqTTFKcVkyMTNkV1Z0UmpCWk1rVjFXakk1TWt4dVRtaE1NRTVzWTI1U1JtSnVTblppUjNkMlZrWk9ZVkpYYkhWa2JUbHdXVEpXVkZFd1JYaE1iVlkwWkVka2FHVnVVWFZhTWpreVRHMTRkbGt5Um5OWU1WSlVWMnRXU2xSc1dsQlRWVTVHVEZaT01WbHJUa0pNVkVWdlRWTnJkVmt6U2pCTlEzTkhRME56UjBGUlZVWkNla0ZDYUdnNWIyUklVbmRQYVRoMlpFaE9NRmt6U25OTWJuQm9aRWRPYUV4dFpIWmthVFY2V1ZNNWRsa3pUbmROUVRSSFFURlZaRVIzUlVJdmQxRkZRWGRKU0dkRVFXUkNaMDVXU0ZOVlJVWnFRVlZDWjJkeVFtZEZSa0pSWTBSQloxbEpTM2RaUWtKUlZVaEJkMDEzU25kWlNrdDNXVUpDUVVkRFRuaFZTMEpDYjNkSFJFRkxRbWRuY2tKblJVWkNVV05FUVdwQlMwSm5aM0pDWjBWR1FsRmpSRUY2UVV0Q1oyZHhhR3RxVDFCUlVVUkJaMDVLUVVSQ1IwRnBSVUY1VG1oNVkxRXpZazVzVEVaa1QxQnNjVmxVTmxKV1VWUlhaMjVMTVVkb01FNUlaR05UV1RSUVprTXdRMGxSUTFOQmRHaFlkblkzZEdWMFZVdzJPVmRxY0RoQ2VHNU1URTEzWlhKNFdtaENibVYzYnk5blJqTkZTa0U5UFE9PTpmOVlSaG9wTi9HN3gwVEVDT1k2bktTQ0hMTllsYjVyaUFIU0ZQSUNvNHF3PQ==" ,
+                        # 'Authorization': "Basic VFVsSlJESjZRME5CTkVOblFYZEpRa0ZuU1ZSaWQwRkJaSEZFYlVsb2NYTnFjRzAxUTNkQlFrRkJRakp2UkVGTFFtZG5jV2hyYWs5UVVWRkVRV3BDYWsxU1ZYZEZkMWxMUTFwSmJXbGFVSGxNUjFGQ1IxSlpSbUpIT1dwWlYzZDRSWHBCVWtKbmIwcHJhV0ZLYXk5SmMxcEJSVnBHWjA1dVlqTlplRVo2UVZaQ1oyOUthMmxoU21zdlNYTmFRVVZhUm1ka2JHVklVbTVaV0hBd1RWSjNkMGRuV1VSV1VWRkVSWGhPVlZVeGNFWlRWVFZYVkRCc1JGSlRNVlJrVjBwRVVWTXdlRTFDTkZoRVZFbDVUVVJOZVU5RVJURk9SRmw2VFd4dldFUlVTWGxOUkUxNlRVUkZNVTVFV1hwTmJHOTNWRlJGVEUxQmEwZEJNVlZGUW1oTlExVXdSWGhFYWtGTlFtZE9Wa0pCYjFSQ1ZYQm9ZMjFzZVUxU2IzZEhRVmxFVmxGUlRFVjRSa3RhVjFKcldWZG5aMUZ1U21oaWJVNXZUVlJKZWs1RVJWTk5Ra0ZIUVRGVlJVRjRUVXBOVkVrelRHcEJkVTFETkhoTlJsbDNSVUZaU0V0dldrbDZhakJEUVZGWlJrczBSVVZCUVc5RVVXZEJSVVF2ZDJJeWJHaENka0pKUXpoRGJtNWFkbTkxYnpaUGVsSjViWGx0VlRsT1YxSm9TWGxoVFdoSFVrVkNRMFZhUWpSRlFWWnlRblZXTW5oWWFYaFpOSEZDV1dZNVpHUmxjbnByVnpsRWQyUnZNMGxzU0dkeFQwTkJhVzkzWjJkSmJVMUpSMHhDWjA1V1NGSkZSV2RaVFhkbldVTnJabXBDT0UxU2QzZEhaMWxFVmxGUlJVUkNUWGxOYWtsNVRXcE5lVTVFVVRCTmVsRjZZVzFhYlU1RVRYbE5VamgzU0ZGWlMwTmFTVzFwV2xCNVRFZFJRa0ZSZDFCTmVrVjNUVlJqTVUxNmF6Tk9SRUYzVFVSQmVrMVJNSGREZDFsRVZsRlJUVVJCVVhoTlJFVjRUVkpGZDBSM1dVUldVVkZoUkVGb1ZGbFhNWGRpUjFWblVsUkZXazFDWTBkQk1WVkZSSGQzVVZVeVJuUmpSM2hzU1VWS01XTXpUbkJpYlZaNlkzcEJaRUpuVGxaSVVUUkZSbWRSVldoWFkzTmlZa3BvYWtRMVdsZFBhM2RDU1V4REszZE9WbVpMV1hkSWQxbEVWbEl3YWtKQ1ozZEdiMEZWWkcxRFRTdDNZV2R5UjJSWVRsb3pVRzF4ZVc1TE5Xc3hkRk00ZDFSbldVUldVakJtUWtWamQxSlVRa1J2UlVkblVEUlpPV0ZJVWpCalJHOTJURE5TZW1SSFRubGlRelUyV1ZoU2FsbFROVzVpTTFsMVl6SkZkbEV5Vm5sa1JWWjFZMjA1YzJKRE9WVlZNWEJHVTFVMVYxUXdiRVJTVXpGVVpGZEtSRkZUTUhoTWJVNTVZa1JEUW5KUldVbExkMWxDUWxGVlNFRlJSVVZuWVVGM1oxb3dkMkpuV1VsTGQxbENRbEZWU0UxQlIwZFpiV2d3WkVoQk5reDVPVEJqTTFKcVkyMTNkV1Z0UmpCWk1rVjFXakk1TWt4dVRtaE1NRTVzWTI1U1JtSnVTblppUjNkMlZrWk9ZVkpYYkhWa2JUbHdXVEpXVkZFd1JYaE1iVlkwWkVka2FHVnVVWFZhTWpreVRHMTRkbGt5Um5OWU1WSlVWMnRXU2xSc1dsQlRWVTVHVEZaT01WbHJUa0pNVkVWdlRWTnJkVmt6U2pCTlEzTkhRME56UjBGUlZVWkNla0ZDYUdnNWIyUklVbmRQYVRoMlpFaE9NRmt6U25OTWJuQm9aRWRPYUV4dFpIWmthVFY2V1ZNNWRsa3pUbmROUVRSSFFURlZaRVIzUlVJdmQxRkZRWGRKU0dkRVFXUkNaMDVXU0ZOVlJVWnFRVlZDWjJkeVFtZEZSa0pSWTBSQloxbEpTM2RaUWtKUlZVaEJkMDEzU25kWlNrdDNXVUpDUVVkRFRuaFZTMEpDYjNkSFJFRkxRbWRuY2tKblJVWkNVV05FUVdwQlMwSm5aM0pDWjBWR1FsRmpSRUY2UVV0Q1oyZHhhR3RxVDFCUlVVUkJaMDVLUVVSQ1IwRnBSVUY1VG1oNVkxRXpZazVzVEVaa1QxQnNjVmxVTmxKV1VWUlhaMjVMTVVkb01FNUlaR05UV1RSUVprTXdRMGxSUTFOQmRHaFlkblkzZEdWMFZVdzJPVmRxY0RoQ2VHNU1URTEzWlhKNFdtaENibVYzYnk5blJqTkZTa0U5UFE9PTpmOVlSaG9wTi9HN3gwVEVDT1k2bktTQ0hMTllsYjVyaUFIU0ZQSUNvNHF3PQ==",
+                        # 'Authorization': 'Basic' + settings.basic_auth_production,
+                        'Authorization': 'Basic' + settings.basic_auth_production,
+                        'Content-Type': 'application/json',
+                        'Cookie': 'TS0106293e=0132a679c0639d13d069bcba831384623a2ca6da47fac8d91bef610c47c7119dcdd3b817f963ec301682dae864351c67ee3a402866'
+                        }
+                        try:
+                            response = requests.request("POST", url=get_API_url(base_url="invoices/reporting/single"), headers=headers, data=payload)
+                            # response = requests.request("POST", url="https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal/invoices/reporting/single", headers=headers, data=payload)
+                            frappe.msgprint("Zatca Response status code: " + str(response.status_code))
+                            frappe.msgprint("Reporting API response: " + response.text)
+                            if response.status_code == 200:
+                                settings.pih = hash_value
+                                settings.save()
+                                sales_invoce = frappe.get_doc('Sales Invoice',invoice_number)
+                                sales_invoce.custom_uuid = uuid1
+                                sales_invoce.custom_zatca_status = "REPORTED"
+                                sales_invoce.save()
+                                success_Log( response.text,uuid1, invoice_number)
+                            else:
+                                error_Log()
+                            
+                        except Exception as e:    
+                            frappe.msgprint(str(e)) 
+                            frappe.msgprint ("error","NOT_REPORTED")
+                    except Exception as e:
+                        frappe.msgprint ("error","NOT-REPORTED")
+                        frappe.throw("error in reporting api" + str(e) )
                     
-def clearance_API(uuid1,hash_value,signed_xmlfile_name,invoice_number):
-                try:
-                    settings = frappe.get_doc('Zatca setting')
-                    payload = json.dumps({
-                    "invoiceHash": hash_value,
-                    "uuid": uuid1,
-                    "invoice": xml_base64_Decode(signed_xmlfile_name), })
-                    headers = {
-                    'accept': 'application/json',
-                    'accept-language': 'en',
-                    'Clearance-Status': '1',
-                    'Accept-Version': 'V2',
-                    'Authorization': 'Basic' + settings.basic_auth_production,
-                    'Content-Type': 'application/json',
-                    'Cookie': 'TS0106293e=0132a679c03c628e6c49de86c0f6bb76390abb4416868d6368d6d7c05da619c8326266f5bc262b7c0c65a6863cd3b19081d64eee99' }
-                    response = requests.request("POST", url=get_API_url(base_url="invoices/clearance/single"), headers=headers, data=payload)
-                    frappe.msgprint("Zatca Response status code: " + str(response.status_code))
-                    frappe.msgprint(response.text)
-                    if response.status_code == 200:
-                            settings.pih = hash_value
-                            settings.save()
-                            sales_invoce = frappe.get_doc('Sales Invoice',invoice_number)
-                            sales_invoce.custom_uuid = uuid1
-                            sales_invoce.custom_zatca_status = "CLEARED"
-                            sales_invoce.save()
-                            success_Log(response.text,uuid1, invoice_number)
-                    else:
-                            error_Log()
+def clearance_API(uuid1,hash_value,signed_xmlfile_name,invoice_number,sales_invoice_doc):
+                    try:
+                        settings = frappe.get_doc('Zatca setting')
+                        payload = json.dumps({
+                        "invoiceHash": hash_value,
+                        "uuid": uuid1,
+                        "invoice": xml_base64_Decode(signed_xmlfile_name), })
+                        headers = {
+                        'accept': 'application/json',
+                        'accept-language': 'en',
+                        'Clearance-Status': '1',
+                        'Accept-Version': 'V2',
+                        'Authorization': 'Basic' + settings.basic_auth_production,
+                        'Content-Type': 'application/json',
+                        'Cookie': 'TS0106293e=0132a679c03c628e6c49de86c0f6bb76390abb4416868d6368d6d7c05da619c8326266f5bc262b7c0c65a6863cd3b19081d64eee99' }
+                        response = requests.request("POST", url=get_API_url(base_url="invoices/clearance/single"), headers=headers, data=payload)
+                        frappe.msgprint("Zatca Response status code: " + str(response.status_code))
+                        frappe.msgprint(response.text)
+                        if response.status_code == 200:
+                                settings.pih = hash_value
+                                settings.save()
+                                sales_invoce = frappe.get_doc('Sales Invoice',invoice_number)
+                                sales_invoce.custom_uuid = uuid1
+                                sales_invoce.custom_zatca_status = "CLEARED"
+                                sales_invoce.save()
+                                data=json.loads(response.text)
+                                base64_xml = data["clearedInvoice"] 
+                                xml_cleared= base64.b64decode(base64_xml).decode('utf-8')
+                                file = frappe.get_doc({
+                                    "doctype": "File",
+                                    "file_name": "Cleared xml file" + sales_invoice_doc.name,
+                                    "attached_to_doctype": sales_invoice_doc.doctype,
+                                    "attached_to_name": sales_invoice_doc.name,
+                                    "content": xml_cleared,
+                                })
+                                file.save()
+                                # frappe.msgprint(xml_cleared)
+                                success_Log(response.text,uuid1, invoice_number)
+                                return xml_cleared
+                        else:
+                                error_Log()
+                            
+                    except Exception as e:
+                        frappe.throw("error in clearance api" + str(e) )
+
+def qrcode_From_Clearedxml(xml_cleared):
+                    try:
+                        root = ET.fromstring(xml_cleared)
+                        qr_element = root.find(".//cac:AdditionalDocumentReference[cbc:ID='QR']/cac:Attachment/cbc:EmbeddedDocumentBinaryObject", namespaces={'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2', 'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'})
+                        qr_code_text = qr_element.text
+                        return qr_code_text
+                    except Exception as e:
+                        frappe.throw("error in qrcode from cleared xml" + str(e) )
+
+def attach_QR_Image(xml_cleared,sales_invoice_doc):
+                    try:
+                        qr_code_text=qrcode_From_Clearedxml(xml_cleared)
+                        qr = pyqrcode.create(qr_code_text)
+                        temp_file_path = "/tmp/qr_code.png"
+                        qr_image=qr.png(temp_file_path, scale=5)
+                        file = frappe.get_doc({
+                            "doctype": "File",
+                            "file_name": f"qr_image_{sales_invoice_doc.name}.png",
+                            "attached_to_doctype": sales_invoice_doc.doctype,
+                            "attached_to_name": sales_invoice_doc.name,
+                            "content": open(temp_file_path, "rb").read(),
+                        })
+                        file.save()
+                    except Exception as e:
+                        frappe.throw("error in qrcode from cleared xml" + str(e) )
                         
-                except Exception as e:
-                    frappe.throw("error in clearance api" + str(e) )
+def zatca_done_or_not(doc, method=None):
+        if doc.custom_zatca_status != "REPORTED" or "CLEARED":
+            frappe.throw("Please submit the invoice to ZATCA first")
 
 def zatca_Call(invoice_number):
                     try:    
@@ -926,7 +964,8 @@ def zatca_Call(invoice_number):
                             if customer_doc.custom_b2c == 1:
                                 reporting_API(uuid1, hash_value, signed_xmlfile_name,invoice_number)
                             else:
-                                clearance_API(uuid1, hash_value, signed_xmlfile_name,invoice_number)
+                                xml_cleared=clearance_API(uuid1, hash_value, signed_xmlfile_name,invoice_number,sales_invoice_doc)
+                                attach_QR_Image(xml_cleared,sales_invoice_doc)
                             # current_time =now()
                             # if clearance_status == "CLEARED":
                             #     frappe.get_doc({"doctype":"Zatca Success log","title":"Zatca invoice call done successfully","message":"This message by Zatca Compliance ","uuid":uuid1,"invoice_number": invoice_number,"time":current_time,"zatca_response":result}).insert()    
@@ -945,5 +984,6 @@ def zatca_Background(invoice_number):
 #                     #         timeout=200,
 #                     #         invoice_number=invoice_number)
 #                     # frappe.msgprint("queued")
+
 
 

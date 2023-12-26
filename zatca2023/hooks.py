@@ -238,7 +238,11 @@ from . import __version__ as app_version
 # default_log_clearing_doctypes = {
 #	"Logging DocType Name": 30  # days to retain logs
 # }
-
+doc_events = {
+    "Sales Invoice": {
+        "before_submit": "zatca2023.zatca2023.zatcasdkcode.zatca_done_or_not"
+    }
+}
 doctype_js = {
     "Sales Invoice" : "public/js/our_sales_invoice.js" ,
     }
