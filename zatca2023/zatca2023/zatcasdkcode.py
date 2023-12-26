@@ -282,7 +282,7 @@ def company_Data(invoice,sales_invoice_doc):
                 cac_PartyIdentification = ET.SubElement(cac_Party_1, "cac:PartyIdentification")
                 cbc_ID_2 = ET.SubElement(cac_PartyIdentification, "cbc:ID")
                 cbc_ID_2.set("schemeID", "CRN")
-                cbc_ID_2.text ="2051053469"   # COmpany CR may change later by field
+                cbc_ID_2.text =company_doc.tax_id   # COmpany CR - Need to have a field in company doctype called company_registration 
                 address_list = frappe.get_list("Address", filters={"is_your_company_address": "1"}, fields=["address_line1", "address_line2","city","pincode","state"])
                 for address in address_list:
                     cac_PostalAddress = ET.SubElement(cac_Party_1, "cac:PostalAddress")
@@ -305,7 +305,6 @@ def company_Data(invoice,sales_invoice_doc):
                 cbc_IdentificationCode.text = "SA"
                 cac_PartyTaxScheme = ET.SubElement(cac_Party_1, "cac:PartyTaxScheme")
                 cbc_CompanyID = ET.SubElement(cac_PartyTaxScheme, "cbc:CompanyID")
-                # cbc_CompanyID.text = "310122393500003"    # Here seller tax id is given
                 cbc_CompanyID.text = company_doc.tax_id
                 cac_TaxScheme = ET.SubElement(cac_PartyTaxScheme, "cac:TaxScheme")
                 cbc_ID_3 = ET.SubElement(cac_TaxScheme, "cbc:ID")

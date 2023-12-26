@@ -1,6 +1,6 @@
 frappe.ui.form.on("Sales Invoice", {
     refresh: function(frm) {
-        frm.add_custom_button(__("click"), function() {
+        frm.add_custom_button(__("Send invoice to Zatca"), function() {
             frm.call({
                 method:"zatca2023.zatca2023.zatcasdkcode.zatca_Background",
                 args: {
@@ -12,6 +12,6 @@ frappe.ui.form.on("Sales Invoice", {
                     }
                 }
             });
-        }, __("sale invoice buttton click"));
+        }, __("Zatca Phase-2"));
     }
 });
