@@ -850,6 +850,10 @@ def reporting_API(uuid1,hash_value,signed_xmlfile_name,invoice_number):
                         if response.status_code == 200:
                             settings.pih = hash_value
                             settings.save()
+                            sales_invoce = frappe.get_doc('Sales Invoice',invoice_number)
+                            sales_invoce.custom_uuid = uuid1
+                            sales_invoce.custom_zatca_status = "REPORTED"
+                            sales_invoce.save()
                             success_Log( response.text,uuid1, invoice_number)
                         else:
                             error_Log()
@@ -882,6 +886,10 @@ def clearance_API(uuid1,hash_value,signed_xmlfile_name,invoice_number):
                     if response.status_code == 200:
                             settings.pih = hash_value
                             settings.save()
+                            sales_invoce = frappe.get_doc('Sales Invoice',invoice_number)
+                            sales_invoce.custom_uuid = uuid1
+                            sales_invoce.custom_zatca_status = "CLEARED"
+                            sales_invoce.save()
                             success_Log(response.text,uuid1, invoice_number)
                     else:
                             error_Log()
